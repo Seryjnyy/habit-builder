@@ -4,13 +4,14 @@ import {
     Box,
     Button,
     Checkbox,
-    FormControlLabel,
+    FormControlLabel, List,
     Modal,
     Stack,
     TextField,
     Typography
 } from "@mui/material";
 import ModalBox from "../Modal/ModalBox";
+import AddDocModal from "../../AddDocModal";
 
 function CreateRoutineModal(props) {
     const [openModal, setOpenModal] = useState(false);
@@ -56,6 +57,10 @@ function CreateRoutineModal(props) {
                         </Typography>
                         <Autocomplete renderInput={(params) => <TextField {...params}/>} options={routineTypes} onChange={(e, value) => {setRoutineType(value?.label)}}/>
                         {createRoutineInterface}
+                        <Typography>Tasks in routine</Typography>
+                        <List>
+                        </List>
+                        <AddDocModal></AddDocModal>
                         <Button>Create routine</Button>
                     </Stack>
                 </ModalBox>
