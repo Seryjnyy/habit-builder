@@ -1,9 +1,14 @@
 import React from 'react';
 import CreateRoutineModal from "../Components/Routine/CreateRoutineModal";
+import {RoutineTasks} from "../Components/Routine/RoutineTasks";
+import Routines from "../Components/Routine/Routines";
 
 function RoutinePage(props) {
     return (
-        <CreateRoutineModal></CreateRoutineModal>
+        <>
+            <Routines></Routines>
+            <CreateRoutineModal></CreateRoutineModal>
+        </>
     );
 }
 

@@ -7,16 +7,24 @@ import ModalBox from "./Components/Modal/ModalBox";
 
 function AddDocModal({onClose}) {
   const [openModal, setOpenModal] = useState(false);
+
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [completionRequirementType, setCompletionRequirementType] = useState("null");
+
   let {user} = useAuth();
 
   const handleClick = async () => {
+    console.log(name);
+    console.log(description);
+    console.log(completionRequirementType);
 
     try {
       await addDoc(collection(db, "tasks"), {
         userID: user.uid,
-        title: "hello title",
-        description: "hello description",
-        completed: false,
+        name: name,
+        description: description,
+        completionRequirementType: completionRequirementType,
         created: Timestamp.now(),
       });
     } catch (err) {
@@ -24,6 +32,7 @@ function AddDocModal({onClose}) {
     }
   };
 
+  const completionRequirementTypes = ["Time", "Amount"];
 
   return (
     <>
@@ -35,8 +44,10 @@ function AddDocModal({onClose}) {
               <Typography id="modal-modal-title" variant="h6" component="h2" sx={{mb: 2}}>
                 Create a new task
               </Typography>
-              <TextField id="outlined-basic" label="Title" variant="outlined" />
-              <TextField id="outlined-basic" label="Description" variant="outlined" />
+              <TextField id="outlined-basic" label="Name" variant="outlined" onChange={(e) => setName(e.target.value)}/>
+              <TextField id="outlined-basic" label="Description" variant="outlined" onChange={(e) => setDescription(e.target.value)}/>
+              <Autocomplete renderInput={(params) => <TextField {...params}/>} options={completionRequirementTypes} onChange={(e, value) => {setCompletionRequirementType(value)}}/>
+
               <Button
                   onClick={() => {
                     handleClick();

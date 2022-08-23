@@ -13,6 +13,11 @@ function TaskManager() {
   const {user} = useAuth();
 
   useEffect(() => {
+    if(user.uid === undefined)
+        return;
+
+    console.log(user.uid)
+
     const q = query(collection(db, "tasks"), where("userID", "==", user.uid), orderBy("created", "desc"));
     onSnapshot(q, (querySnapshot) => {
       setTasks(
@@ -22,12 +27,12 @@ function TaskManager() {
         }))
       );
     });
-  }, []);
+  }, [user]);
   return(
       <>
           <Stack>
               {tasks.map(task => (
-                  <Task id={task.id} key={task.id} title={task.data.title} description={task.data.description} completed={task.data.completed}></Task>
+                  <Task id={task.id} key={task.id} name={task.data.name} description={task.data.description} completionRequirementType={task.data.completionRequirementType}></Task>
               ))}
           </Stack>
         <Button onClick={() => setOpenAddModal(true)} variant={"contained"}>Add task</Button>

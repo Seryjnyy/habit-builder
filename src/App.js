@@ -14,13 +14,13 @@ function App() {
     <UserAuthContext>
         <BrowserRouter>
             <Navbar></Navbar>
-            <Box sx={{mt:7}}>
+            <Box sx={{mt:8}}>
                 <Routes>
                     <Route path={"/"} element={<LandingPage></LandingPage>}></Route>
                     <Route path={"/login"} element={<Login></Login>}></Route>
-                    <Route path={"/routine"} element={<RoutinePage></RoutinePage>}></Route>
+                    <Route path={"/routines"} element={<RequireAuth redirectTo={"/login"}><RoutinePage></RoutinePage></RequireAuth>}></Route>
 
-                    <Route path={"/task-manager"} element={<RequireAuth redirectTo={"/login"}><TaskManager></TaskManager></RequireAuth>}></Route>
+                    <Route path={"/tasks"} element={<RequireAuth redirectTo={"/login"}><TaskManager></TaskManager></RequireAuth>}></Route>
 
                 </Routes>
             </Box>
