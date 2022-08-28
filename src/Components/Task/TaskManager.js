@@ -16,8 +16,6 @@ function TaskManager() {
     if(user.uid === undefined)
         return;
 
-    console.log(user.uid)
-
     const q = query(collection(db, "tasks"), where("userID", "==", user.uid), orderBy("created", "desc"));
     onSnapshot(q, (querySnapshot) => {
       setTasks(

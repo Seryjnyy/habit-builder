@@ -197,8 +197,6 @@ function Routines() {
         let aa = a.data?.routineProgression?.completed;
         let bb = b.data?.routineProgression?.completed;
 
-        console.log(bb)
-
         if (aa === bb) {
             return 0;
         } else if (aa === true && bb === false) {

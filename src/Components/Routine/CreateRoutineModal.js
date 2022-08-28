@@ -20,6 +20,8 @@ import TaskPlain from "./TaskPlain";
 import RoutineTask from "./RoutineTask";
 
 function CreateRoutineModal(props) {
+    const [openTaskCreationModal, setOpenTaskCreationModal] = useState(false);
+
     const [openModal, setOpenModal] = useState(false);
     const [routineName, setRoutineName] = useState("");
     const [routineDescription, setRoutineDescription] = useState("");
@@ -29,6 +31,8 @@ function CreateRoutineModal(props) {
     const [userTasks, setUserTasks] = useState([]);
     const {user} = useAuth();
 
+    const [routineTasksError, setRoutineTasksError] = useState("");
+    const [routineDaysError, setRoutineDaysError] = useState("");
 
     const [routineTasks, setRoutineTasks] = useState([]);
     const [routineTasksLength, setRoutineTasksLength] = useState(0);
@@ -37,6 +41,11 @@ function CreateRoutineModal(props) {
         routineTasks.push({"id" : id, "requirementType" : requirementType, "requirementAmount" : requirementAmount });
 
         setRoutineTasksLength(routineTasks.length);
+
+        if(routineTasks.length <= 10){
+            if(routineTasksError != "")
+                setRoutineTasksError("");
+        }
     };
 
     const removeTask = (id) => {
@@ -47,6 +56,9 @@ function CreateRoutineModal(props) {
         routineTasks.splice(index, 1);
 
         setRoutineTasksLength(routineTasks.length);
+
+        if(routineTasks.length <= 0)
+            setRoutineTasksError("Routine requires at least 1 task.");
     };
 
     // fetches tasks
@@ -62,11 +74,36 @@ function CreateRoutineModal(props) {
         });
     }, []);
 
-    const addRoutine = () => {
-        console.log(routineName);
-        console.log(routineDescription);
-        console.log(routineTasks);
-        console.log(routineDays);
+
+    const validateAndAddRoutine = () => {
+        if(routineName.length <= 0){
+            setNameError("Routine requires a name.")
+            return;
+        }
+
+        if(routineName.length > 50)
+            return;
+
+        if(routineDescription.length > 50)
+            return;
+
+        if(routineTasks.length <= 0){
+            setRoutineTasksError("Routine requires at least 1 task.");
+            return;
+        }
+
+        if(routineTasks.length > 10){
+            setRoutineTasksError("Routine can't have more than 10 tasks.");
+            return;
+        }
+
+        if(routineDays.length <= 0){
+            setRoutineDaysError("Routine needs at least 1 repeating day.")
+            return;
+        }
+
+        setRoutineDaysError("");
+        setRoutineTasksError("");
 
         try{
             addDoc(collection(db, "routine"), {
@@ -87,6 +124,41 @@ function CreateRoutineModal(props) {
         setOpenModal(false);
     }
 
+    const setRoutineDaysProxy = (newDays) => {
+        setRoutineDays(newDays);
+
+        if(routineDaysError != "")
+            setRoutineDaysError("");
+    }
+
+    const [nameError, setNameError] = useState("");
+    const [descriptionError, setDescriptionError] = useState("");
+
+    const validateName = (val) => {
+        if(val.length === 0){
+            setNameError("Routine requires a name.")
+            return;
+        }
+
+        if(val.length > 50){
+            setNameError("Routine name must be less than 50 characters long.")
+            return;
+        }
+
+        setRoutineName(val);
+        setNameError("");
+    }
+
+    const validateDescription = (val) => {
+        if(val.length > 50){
+            setDescriptionError("Routine description must be less than 50 characters long.")
+            return;
+        }
+
+        setRoutineDescription(val);
+        setDescriptionError("");
+    }
+
     return (
         <>
         <Button onClick={() => setOpenModal(true)}>Create routine</Button>
@@ -98,29 +170,30 @@ function CreateRoutineModal(props) {
                             Create a new routine
                         </Typography>
 
-                        <Typography>Name of routine</Typography>
-                        <TextField onChange={(e) => {setRoutineName(e.target.value)}}></TextField>
+                        <TextField sx={{mb:1}} error={nameError != ""} helperText={nameError} label={"Name"} onChange={(e) => {validateName(e.target.value)}}></TextField>
 
-
-                        <Typography>Description</Typography>
-                        <TextField onChange={(e) => {setRoutineDescription(e.target.value)}}></TextField>
+                        <TextField sx={{mb:3}} error={descriptionError != ""} helperText={descriptionError != "" ? descriptionError : "*optional"} label={"Description"} onChange={(e) => {validateDescription(e.target.value)}}></TextField>
 
                         {/*<Typography>Type</Typography>*/}
                         {/*<Autocomplete renderInput={(params) => <TextField {...params}/>} options={routineTypes} onChange={(e, value) => {setRoutineType(value?.label)}}/>*/}
 
                         <Typography>Tasks in routine : {routineTasksLength}</Typography>
+                        <Typography sx={{color:"#D32F2F", fontSize:12, ml:2}}>{routineTasksError}</Typography>
+                        <Divider></Divider>
                         <List>
                             {userTasks.map(task => (
-                                <Box sx={{mb:2}} key={task.id}>
+                                <Box sx={{mb:1, mt:1}} key={task.id}>
                                     <RoutineTask id={task.id} name={task.data.name} description={task.data.description} completionRequirementType={task.data.completionRequirementType} addTaskToRoutine={addTask} removeTaskFromRoutine={removeTask}></RoutineTask>
-                                    <Divider></Divider>
                                 </Box>
 
                             ))}
                         </List>
+                        <Button sx={{mb:1}} onChange={() => setOpenTaskCreationModal(true)}>Create task</Button>
+                        {openTaskCreationModal && <AddDocModal></AddDocModal>}
+                        <Divider sx={{mb:3}}></Divider>
 
                         <Typography>Repeat days</Typography>
-                        <ToggleButtonGroup color={"primary"} value={routineDays} onChange={(event, newDays) => {setRoutineDays(newDays)}}>
+                        <ToggleButtonGroup sx={{mb: 1}} color={"primary"} value={routineDays} onChange={(event, newDays) => {setRoutineDaysProxy(newDays)}}>
                             <ToggleButton value={1}>Mon</ToggleButton>
                             <ToggleButton value={2}>Tus</ToggleButton>
                             <ToggleButton value={3}>Wed</ToggleButton>
@@ -129,7 +202,8 @@ function CreateRoutineModal(props) {
                             <ToggleButton value={6}>Sat</ToggleButton>
                             <ToggleButton value={7}>Sun</ToggleButton>
                         </ToggleButtonGroup>
-                        <Button onClick={addRoutine}>Create routine</Button>
+                        <Typography sx={{color:"#D32F2F", fontSize:12, ml:2, mb:2}}>{routineDaysError}</Typography>
+                        <Button onClick={validateAndAddRoutine}>Create routine</Button>
                     </Stack>
                 </ModalBox>
             </div>

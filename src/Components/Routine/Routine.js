@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Box, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
+import {Box, LinearProgress, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
 import TaskToComplete from "./TaskToComplete";
 
 function Routine({id, name, description, days, activeToday, tasks, routineProgression, updateRoutineCompletion, completeRoutine}) {
@@ -45,7 +45,6 @@ function Routine({id, name, description, days, activeToday, tasks, routineProgre
             <Typography>Name: {name}</Typography>
             <Typography>Description: {description}</Typography>
             <Typography>Days: {days}</Typography>
-            {console.log(days)}
             <ToggleButtonGroup disabled={true} color={"primary"} value={days}>
                 <ToggleButton value={1}>Mon</ToggleButton>
                 <ToggleButton value={2}>Tus</ToggleButton>
@@ -63,6 +62,7 @@ function Routine({id, name, description, days, activeToday, tasks, routineProgre
                 Status: {routineStatus}
             </Typography>
             {activeToday && <Typography>Tasks left for today {tasks.length - taskProgress.filter(task => (task.completed === true)).length}</Typography>}
+            <LinearProgress sx={{mt: 2}} variant="determinate" value={taskProgress.filter(task => (task.completed === true)).length != 0 ? (taskProgress.filter(task => (task.completed === true)).length / tasks.length) * 100 : 0} />
         </Box>
     );
 }

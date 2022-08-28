@@ -26,6 +26,13 @@ function RoutineTask({id, name, description, completionRequirementType, addTaskT
     const [amount, setAmount] = useState(5);
     const taskRequirementLabel = completionRequirementType === "Time" ? "Minutes" : "Repetitions";
 
+    const setAmountProxy = (num) => {
+        if(num < 0 || num > 999)
+            return;
+
+        setAmount(num);
+    }
+
     const addTask = () => {
         addTaskToRoutine(id, completionRequirementType, amount);
         setAdded(true);
@@ -38,17 +45,13 @@ function RoutineTask({id, name, description, completionRequirementType, addTaskT
 
     return (
         <>
-            <Box>
-                <Card sx={{mb:2}}>
-                    <CardContent>
+            <Box sx={{backgroundColor:"lightBlue", p:2, borderRadius: 2}}>
                         <Typography>Name: {name}</Typography>
                         <Typography>Description: {description}</Typography>
                         <Typography>Completion requirement type: {completionRequirementType}</Typography>
-                        <TextField disabled={added} type={"number"} label={taskRequirementLabel} value={amount} onChange={(e) => setAmount(Number(e.target.value))}></TextField>
-                        <Button disabled={added} onClick={addTask}>Add</Button>
-                        <Button disabled={!added} onClick={removeTask}>Remove</Button>
-                    </CardContent>
-                </Card>
+                        <TextField sx={{mt:2}} disabled={added} type={"number"} label={taskRequirementLabel} value={amount} onChange={(e) => setAmountProxy(Number(e.target.value))}></TextField>
+                        <Button sx={{mt:3}} disabled={added} onClick={addTask}>Add</Button>
+                        <Button sx={{mt:3}} disabled={!added} onClick={removeTask}>Remove</Button>
             </Box>
 
         </>
