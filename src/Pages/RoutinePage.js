@@ -6,7 +6,6 @@ function RoutinePage(props) {
     return (
         <>
             <Routines></Routines>
-            <CreateRoutineModal></CreateRoutineModal>
         </>
     );
 }

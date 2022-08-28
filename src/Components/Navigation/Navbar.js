@@ -4,7 +4,7 @@ import {useAuth} from "../Auth/UserAuthContext";
 import {Link, useNavigate} from "react-router-dom";
 
 function Navbar(props) {
-    const tempColour = "#01031d";
+    const tempColour = "#43a047";
 
     const {user, login, logout} = useAuth();
     let navigate = useNavigate();

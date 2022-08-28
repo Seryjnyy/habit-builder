@@ -12,8 +12,9 @@ import {
 } from "firebase/firestore";
 import {db} from "../../firebase";
 import {useAuth} from "../Auth/UserAuthContext";
-import {Typography} from "@mui/material";
+import {Box, Container, Grid, Typography} from "@mui/material";
 import Routine from "./Routine";
+import CreateRoutineModal from "./CreateRoutineModal";
 
 function Routines() {
     const {user} = useAuth();
@@ -37,26 +38,38 @@ function Routines() {
 
             if (currentDoc.data()?.taskProgress != undefined) {
                 ar = currentDoc.data().taskProgress;
-                if(ar != undefined){
+                if (ar != undefined) {
                     const found = ar.find(element => element.id === taskID);
-                    if(found){
+                    if (found) {
                         found.amount = amountCompleted;
                         found.completed = amountCompleted === taskRequirementAmount;
-                    }else{
-                        ar.push({"id" : taskID, "amount" : amountCompleted, "completed" : amountCompleted === taskRequirementAmount ? true : false});
+                    } else {
+                        ar.push({
+                            "id": taskID,
+                            "amount": amountCompleted,
+                            "completed": amountCompleted === taskRequirementAmount ? true : false
+                        });
                     }
 
-                }else{
-                    ar.push({"id" : taskID, "amount" : amountCompleted, "completed" : amountCompleted === taskRequirementAmount ? true : false});
+                } else {
+                    ar.push({
+                        "id": taskID,
+                        "amount": amountCompleted,
+                        "completed": amountCompleted === taskRequirementAmount ? true : false
+                    });
                 }
             }
 
             const taskBeenCompleted = ar?.filter(element => (element.completed === true))?.length === routineTaskAmount;
-            if(taskBeenCompleted)
-                setRoutinesCompletedToday(routinesCompletedToday+1);
+            if (taskBeenCompleted)
+                setRoutinesCompletedToday(routinesCompletedToday + 1);
             setDoc(routineRef, {
                 routineID: routineID,
-                taskProgress: currentDoc.data() === undefined ? [{"id" : taskID, "amount" : amountCompleted, "completed" : amountCompleted === taskRequirementAmount ? true : false}] : ar,
+                taskProgress: currentDoc.data() === undefined ? [{
+                    "id": taskID,
+                    "amount": amountCompleted,
+                    "completed": amountCompleted === taskRequirementAmount ? true : false
+                }] : ar,
                 completed: taskBeenCompleted ? true : false,
                 date: getTodaysDate()
             }, {merge: true})
@@ -74,15 +87,16 @@ function Routines() {
 
         const routineRef = doc(db, "routineCompletion", customID);
 
-        // setDoc(routineRef, {
-        //     routineID: routineID,
-        //     taskProgress: tasks.map((task) => ({
-        //       "id" : task.id,
-        //       "amount" : task.requirementAmount
-        //     })),
-        //     completed: true,
-        //     date: getTodaysDate()
-        // })
+        setDoc(routineRef, {
+            routineID: routineID,
+            taskProgress: tasks.map((task) => ({
+                "id": task.id,
+                "completed": true,
+                "amount": task.requirementAmount
+            })),
+            completed: true,
+            date: getTodaysDate()
+        })
 
         // const dateToday = getTodaysDate();
         // console.log("too man'y calls")
@@ -126,7 +140,7 @@ function Routines() {
 
                 // counts how many routines completed
                 routineProgresses.forEach((routine) => {
-                    if(routine.data().completed){
+                    if (routine.data().completed) {
                         completedRoutinesTodayAmount++;
                     }
                 });
@@ -185,38 +199,43 @@ function Routines() {
 
         console.log(bb)
 
-        if(aa === bb){
+        if (aa === bb) {
             return 0;
-        }else if(aa === true && bb === false){
+        } else if (aa === true && bb === false) {
             return 1;
-        }else if(aa === false && bb === true){
+        } else if (aa === false && bb === true) {
             return -1;
-        }else if((aa === undefined && a.data?.activeToday) && bb === true){
+        } else if ((aa === undefined && a.data?.activeToday) && bb === true) {
             return -1;
-        }else if(aa === true && (bb === undefined && b.data?.activeToday)){
+        } else if (aa === true && (bb === undefined && b.data?.activeToday)) {
             return 1;
-        }else if((aa === undefined && a.data?.activeToday) && bb === false){
+        } else if ((aa === undefined && a.data?.activeToday) && bb === false) {
             return 1;
-        }else if(aa === false && (bb === undefined && b.data?.activeToday)){
+        } else if (aa === false && (bb === undefined && b.data?.activeToday)) {
             return -1;
-        }else if(aa === undefined && bb === true){
+        } else if (aa === undefined && bb === true) {
             return 1;
-        }else if(aa === true && bb === undefined){
+        } else if (aa === true && bb === undefined) {
             return -1;
-        }else if(aa === undefined && bb === false){
+        } else if (aa === undefined && bb === false) {
             return 1;
-        }else if(aa === false && bb === undefined){
+        } else if (aa === false && bb === undefined) {
             return -1;
         }
 
     }
 
 
-        return (
+    return (
         <>
-            <Typography>Total routines: {routines.length}</Typography>
-            <Typography>Active today: {routinesActiveToday}</Typography>
-            <Typography>Routines left for today: {routinesActiveToday - routinesCompletedToday}</Typography>
+            <Grid container direction={"column"} alignItems={"center"}>
+                <Box sx={{mb: 2}}>
+                    <Typography>Total routines: {routines.length}</Typography>
+                    <Typography>Active today: {routinesActiveToday}</Typography>
+                    <Typography>Routines left for today: {routinesActiveToday - routinesCompletedToday}</Typography>
+                    <CreateRoutineModal></CreateRoutineModal>
+                </Box>
+
 
             {routines.sort((a, b) => comperator(a, b)).map((routine) => (
                 <Routine key={routine.id} id={routine.id} name={routine.data.name}
@@ -225,6 +244,7 @@ function Routines() {
                          routineProgression={routine.data.routineProgression}
                          updateRoutineCompletion={updateRoutineCompletion} completeRoutine={completeRoutine}></Routine>
             ))}
+            </Grid>
         </>
     );
 

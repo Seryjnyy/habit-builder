@@ -14,7 +14,7 @@ function App() {
     <UserAuthContext>
         <BrowserRouter>
             <Navbar></Navbar>
-            <Box sx={{mt:8}}>
+            <Box sx={{mt:10}}>
                 <Routes>
                     <Route path={"/"} element={<LandingPage></LandingPage>}></Route>
                     <Route path={"/login"} element={<Login></Login>}></Route>
