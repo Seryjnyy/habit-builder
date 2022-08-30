@@ -8,6 +8,7 @@ import RequireAuth from "./Components/Auth/RequireAuth";
 import Navbar from "./Components/Navigation/Navbar";
 import LandingPage from "./Pages/LandingPage";
 import RoutinePage from "./Pages/RoutinePage";
+import ProfilePage from "./Pages/ProfilePage";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
                     <Route path={"/routines"} element={<RequireAuth redirectTo={"/login"}><RoutinePage></RoutinePage></RequireAuth>}></Route>
 
                     <Route path={"/tasks"} element={<RequireAuth redirectTo={"/login"}><TaskManager></TaskManager></RequireAuth>}></Route>
+                    <Route path={"/profile"} element={<RequireAuth redirectTo={"/login"}><ProfilePage></ProfilePage></RequireAuth>}></Route>
 
                 </Routes>
             </Box>

@@ -38,7 +38,8 @@ function Navbar(props) {
                     <Typography sx={{ flexGrow: 1 }}>something</Typography>
                     <Box sx={{display: "flex", flexGrow: 1}}>
                     <Typography sx={{mr:2}}><Link to={"/tasks"} style={{textDecoration:"none"}}>Tasks</Link></Typography>
-                    <Typography><Link to={"/routines"} style={{textDecoration:"none"}}>Routines</Link></Typography>
+                    <Typography sx={{mr:2}}><Link to={"/routines"} style={{textDecoration:"none"}}>Routines</Link></Typography>
+                    <Typography><Link to={"/profile"} style={{textDecoration:"none"}}>Profile</Link></Typography>
 
                     </Box>
                     {user ? <><Typography>{"Hi, " + user.displayName}</Typography><Button onClick={() => Logout()}>Logout</Button></>: <Button onClick={() => LoginWithGoogle()}>Login with Google</Button>}

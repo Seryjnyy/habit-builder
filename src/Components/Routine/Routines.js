@@ -71,6 +71,9 @@ function Routines() {
                     "completed": amountCompleted === taskRequirementAmount ? true : false
                 }] : ar,
                 completed: taskBeenCompleted ? true : false,
+                userID: user.uid,
+                year: dateTodayLong.getFullYear(),
+                month: dateTodayLong.getMonth()+1,
                 date: getTodaysDate()
             }, {merge: true})
 
@@ -92,9 +95,12 @@ function Routines() {
             taskProgress: tasks.map((task) => ({
                 "id": task.id,
                 "completed": true,
-                "amount": task.requirementAmount
+                "amount": task.requirementAmount,
             })),
             completed: true,
+            userID: user.uid,
+            year: dateTodayLong.getFullYear(),
+            month: dateTodayLong.getMonth()+1,
             date: getTodaysDate()
         })
 
@@ -189,7 +195,7 @@ function Routines() {
     const fetchCompletionToday = async () => {
         const dateTodayLong = new Date();
         const dateToday = dateTodayLong.getDate() + "/" + dateTodayLong.getMonth() + "/" + dateTodayLong.getFullYear()
-        const completedRoutinesTodayQuery = query(collection(db, "routineCompletion"), where("date", "==", dateToday));
+        const completedRoutinesTodayQuery = query(collection(db, "routineCompletion"), where("userID", "==", user.uid), where("date", "==", dateToday));
         return await getDocs(completedRoutinesTodayQuery);
     }
 

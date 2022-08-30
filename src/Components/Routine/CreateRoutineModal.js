@@ -124,6 +124,9 @@ function CreateRoutineModal(props) {
         setOpenModal(false);
     }
 
+
+
+
     const setRoutineDaysProxy = (newDays) => {
         setRoutineDays(newDays);
 

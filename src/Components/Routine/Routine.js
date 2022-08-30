@@ -44,7 +44,6 @@ function Routine({id, name, description, days, activeToday, tasks, routineProgre
             <Typography>ID: {id}</Typography>
             <Typography>Name: {name}</Typography>
             <Typography>Description: {description}</Typography>
-            <Typography>Days: {days}</Typography>
             <ToggleButtonGroup disabled={true} color={"primary"} value={days}>
                 <ToggleButton value={1}>Mon</ToggleButton>
                 <ToggleButton value={2}>Tus</ToggleButton>
