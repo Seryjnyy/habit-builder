@@ -52,6 +52,7 @@ function Routines() {
                     }
 
                 } else {
+                    ar = [];
                     ar.push({
                         "id": taskID,
                         "amount": amountCompleted,
@@ -60,8 +61,10 @@ function Routines() {
                 }
             }
 
-            const taskBeenCompleted = ar?.filter(element => (element.completed === true))?.length === routineTaskAmount;
-            if (taskBeenCompleted)
+            const tasksBeenCompleted = ar?.filter(element => element.completed === true)?.length === routineTaskAmount;
+            console.log(ar)
+
+            if (tasksBeenCompleted)
                 setRoutinesCompletedToday(routinesCompletedToday + 1);
             setDoc(routineRef, {
                 routineID: routineID,
@@ -70,12 +73,72 @@ function Routines() {
                     "amount": amountCompleted,
                     "completed": amountCompleted === taskRequirementAmount ? true : false
                 }] : ar,
-                completed: taskBeenCompleted ? true : false,
+                completed: tasksBeenCompleted ? true : false,
                 userID: user.uid,
                 year: dateTodayLong.getFullYear(),
                 month: dateTodayLong.getMonth()+1,
                 date: getTodaysDate()
             }, {merge: true})
+
+            if(tasksBeenCompleted){
+                const routineStreakRef = doc(db, "routineStreak", routineID);
+                let streak = 1;
+
+                // get the next day for the task
+                const routineFound = routines.find(element => element.id === routineID);
+
+                const todayAsDayOfWeek = dateTodayLong.getDay() === 0 ? 7 : dateTodayLong.getDay();
+
+                let nextDayOfTheWeek = -1;
+                for(let i = 0; i < routineFound.days.length; i++){
+                    if(todayAsDayOfWeek === routineFound.days[i]){
+                        if(i === routineFound.days.length - 1){
+                            nextDayOfTheWeek = routineFound.days[0];
+                            break;
+                        }
+
+                        nextDayOfTheWeek = routineFound.days[i];
+                        break;
+                    }
+                }
+
+                let daysTillNextDay = nextDayOfTheWeek - todayAsDayOfWeek;
+
+                // the same day next week
+                if(daysTillNextDay === 0){
+                    daysTillNextDay = 7;
+                }else if(daysTillNextDay < 0){
+                    // wrap around
+                    daysTillNextDay = daysTillNextDay + 7;
+                }
+
+                const dateOfNextDay = dateTodayLong.getDate() + daysTillNextDay;
+
+                const totalDaysForThisMonth = new Date(dateTodayLong.getFullYear(), dateTodayLong.getMonth(), 0).getDate();
+
+                let monthOfNextDay = dateTodayLong.getMonth();
+                let dayOfNextDay = dateOfNextDay;
+
+                if(dayOfNextDay > totalDaysForThisMonth){
+                    dayOfNextDay = totalDaysForThisMonth - dateOfNextDay;
+                    monthOfNextDay++;
+                }
+
+                console.log("the day: "+ dayOfNextDay + " the month: "+ monthOfNextDay)
+
+
+                // today day Mon Tue etc.
+                // calculate how many days till the next day
+                // calculate the date 28 + 4
+                // the month might change
+                
+
+                // setDoc(routineStreakRef, {
+                //     routineID : routineID,
+                //     streak: streak,
+                //     nextDay:
+                // }, {merge: true})
+            }
 
 
         }).catch(err => alert(err));
