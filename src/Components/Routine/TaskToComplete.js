@@ -12,7 +12,6 @@ function TaskToComplete({task, completeTask, activeToday, alreadyCompleted, upda
         setAmount(num);
     }
 
-
     const taskCompleted = () => {
         setCompleted(true);
         completeTask(task.id);
@@ -22,7 +21,8 @@ function TaskToComplete({task, completeTask, activeToday, alreadyCompleted, upda
         <Box sx={{backgroundColor: "lightBlue", mb: 1, mt: 1, p: 2, borderRadius: 2}}>
             <Box sx={{mb: 2}}>
                 <Typography>ID: {task.id}</Typography>
-                <Typography>Requirement type: {task.requirementType}</Typography>
+                <Typography>Name: {task.taskInfo.name}</Typography>
+                <Typography>Description: {task.taskInfo.description}</Typography>
                 <Typography>Requirement amount: {task.requirementAmount}</Typography>
             </Box>
 

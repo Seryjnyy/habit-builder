@@ -23,9 +23,7 @@ function Routines() {
 
     const [routinesActiveToday, setRoutinesActiveToday] = useState(0);
 
-
     const [routinesCompletedToday, setRoutinesCompletedToday] = useState(0);
-
 
     const updateRoutineCompletion = (routineID, taskID, amountCompleted, taskRequirementAmount, routineTaskAmount) => {
         const dateTodayLong = new Date();
@@ -34,55 +32,44 @@ function Routines() {
         const routineRef = doc(db, "routineCompletion", customID);
 
         getDoc(routineRef).then((currentDoc) => {
-            let ar;
 
-            if (currentDoc.data()?.taskProgress != undefined) {
-                ar = currentDoc.data().taskProgress;
-                if (ar != undefined) {
-                    const found = ar.find(element => element.id === taskID);
-                    if (found) {
-                        found.amount = amountCompleted;
-                        found.completed = amountCompleted === taskRequirementAmount;
-                    } else {
-                        ar.push({
-                            "id": taskID,
-                            "amount": amountCompleted,
-                            "completed": amountCompleted === taskRequirementAmount ? true : false
-                        });
-                    }
+            let taskProgressions = currentDoc.data()?.taskProgress;
 
-                } else {
-                    ar = [];
-                    ar.push({
-                        "id": taskID,
-                        "amount": amountCompleted,
-                        "completed": amountCompleted === taskRequirementAmount ? true : false
-                    });
-                }
-            }
+            if(taskProgressions === undefined)
+                taskProgressions = [];
+            
+            let taskProgress = taskProgressions.find(element => element.id === taskID);
 
-            const tasksBeenCompleted = ar?.filter(element => element.completed === true)?.length === routineTaskAmount;
-            console.log(ar)
-
-            if (tasksBeenCompleted)
-                setRoutinesCompletedToday(routinesCompletedToday + 1);
-            setDoc(routineRef, {
-                routineID: routineID,
-                taskProgress: currentDoc.data() === undefined ? [{
+            if(taskProgress === undefined){
+                taskProgressions.push({
                     "id": taskID,
                     "amount": amountCompleted,
                     "completed": amountCompleted === taskRequirementAmount ? true : false
-                }] : ar,
-                completed: tasksBeenCompleted ? true : false,
+                });
+            }else{
+                taskProgress.amount = amountCompleted;
+                taskProgress.completed = amountCompleted === taskRequirementAmount;
+            }
+            
+            const allRoutineTasksCompleted = taskProgressions.filter(element => element.completed === true)?.length === routineTaskAmount;
+
+            if (allRoutineTasksCompleted)
+                setRoutinesCompletedToday(routinesCompletedToday + 1);
+            
+            // this needs error handling
+            setDoc(routineRef, {
+                routineID: routineID,
+                taskProgress: taskProgressions,
+                completed: allRoutineTasksCompleted,
                 userID: user.uid,
                 year: dateTodayLong.getFullYear(),
                 month: dateTodayLong.getMonth()+1,
                 date: getTodaysDate()
             }, {merge: true})
 
-            if(tasksBeenCompleted){
+
+            if(allRoutineTasksCompleted) {
                 const routineStreakRef = doc(db, "routineStreak", routineID);
-                let streak = 1;
 
                 // get the next day for the task
                 const routineFound = routines.find(element => element.id === routineID);
@@ -90,14 +77,18 @@ function Routines() {
                 const todayAsDayOfWeek = dateTodayLong.getDay() === 0 ? 7 : dateTodayLong.getDay();
 
                 let nextDayOfTheWeek = -1;
-                for(let i = 0; i < routineFound.days.length; i++){
-                    if(todayAsDayOfWeek === routineFound.days[i]){
-                        if(i === routineFound.days.length - 1){
-                            nextDayOfTheWeek = routineFound.days[0];
+                let routineDays = [...routineFound.data.days].sort();
+
+
+                for (let i = 0; i < routineDays.length; i++) {
+                    // console.log(routineDays[i])
+                    if (todayAsDayOfWeek === routineDays[i]) {
+                        if (i === routineDays.length - 1) {
+                            nextDayOfTheWeek = routineDays[0];
                             break;
                         }
 
-                        nextDayOfTheWeek = routineFound.days[i];
+                        nextDayOfTheWeek = routineDays[i + 1];
                         break;
                     }
                 }
@@ -105,9 +96,9 @@ function Routines() {
                 let daysTillNextDay = nextDayOfTheWeek - todayAsDayOfWeek;
 
                 // the same day next week
-                if(daysTillNextDay === 0){
+                if (daysTillNextDay === 0) {
                     daysTillNextDay = 7;
-                }else if(daysTillNextDay < 0){
+                } else if (daysTillNextDay < 0) {
                     // wrap around
                     daysTillNextDay = daysTillNextDay + 7;
                 }
@@ -116,32 +107,62 @@ function Routines() {
 
                 const totalDaysForThisMonth = new Date(dateTodayLong.getFullYear(), dateTodayLong.getMonth(), 0).getDate();
 
-                let monthOfNextDay = dateTodayLong.getMonth();
                 let dayOfNextDay = dateOfNextDay;
 
-                if(dayOfNextDay > totalDaysForThisMonth){
-                    dayOfNextDay = totalDaysForThisMonth - dateOfNextDay;
-                    monthOfNextDay++;
+                if (dayOfNextDay > totalDaysForThisMonth) {
+                    dayOfNextDay = Math.abs(totalDaysForThisMonth - dateOfNextDay);
                 }
 
-                console.log("the day: "+ dayOfNextDay + " the month: "+ monthOfNextDay)
+                let someDate = new Date();
+                let result = someDate.setDate(someDate.getDate() + daysTillNextDay);
+                let newDate = new Date(result)
+
+                getDoc(routineStreakRef).then((streakDoc) => {
+                    let streak = 1;
+
+                    if(streakDoc.data() != undefined){
+                        let streakDocData = streakDoc.data();
+
+                        let nextSplit = streakDocData.nextDate.split("/")
+                        let todaySplit = getDateDDMMYYYY(new Date()).split("/")
+
+                        streak = streakDocData.streak;
+
+                        // console.log(nextSplit)
+                        // console.log(todaySplit)
+
+                        if((nextSplit[0] === todaySplit[0]) && (nextSplit[1] === todaySplit[1]) && (nextSplit[2] === todaySplit[2])){
+                            // good shit you carry on the streak
+                            streak = streak + 1;
+                            // console.log("they the same")
+                        }else{
+                            // check if before or after
+                            let properNextDate = new Date(nextSplit[2], nextSplit[1] - 1, nextSplit[0]);
+                            let properTodayDate = new Date(todaySplit[2], todaySplit[1] - 1, todaySplit[0]);
+
+                            if(properTodayDate > properNextDate){
+                                // shit you missed it bro
+                                streak = 1;
+                                // console.log("today is ahead of next day")
+                            }else{
+                                // this here should not happen
+                                // console.log("today is before next day")
+                            }
+                        }
+                    }
 
 
-                // today day Mon Tue etc.
-                // calculate how many days till the next day
-                // calculate the date 28 + 4
-                // the month might change
-                
-
-                // setDoc(routineStreakRef, {
-                //     routineID : routineID,
-                //     streak: streak,
-                //     nextDay:
-                // }, {merge: true})
-            }
+                    setDoc(routineStreakRef, {
+                        routineID : routineID,
+                        streak: streak,
+                        nextDate: newDate.getDate() + "/" + (newDate.getMonth() + 1) + "/"+newDate.getFullYear()
+                    }, {merge: true})
+                });
 
 
-        }).catch(err => alert(err));
+                }
+
+            }).catch(err => alert(err));
 
 
     }
@@ -197,6 +218,10 @@ function Routines() {
         return dateTodayLong.getDate() + "/" + dateTodayLong.getMonth() + "/" + dateTodayLong.getFullYear()
     }
 
+    const getDateDDMMYYYY = (date) => {
+        return date.getDate() + "/" + (date.getMonth() + 1) + "/" + date.getFullYear()
+    }
+
     useEffect(() => {
         if (user.uid === undefined)
             return;
@@ -205,61 +230,92 @@ function Routines() {
         onSnapshot(routinesQuery, (querySnapshot) => {
             let activeTodayAmount = 0;
             let completedRoutinesTodayAmount = 0;
+            // this is so scuffed bro fs
             fetchCompletionToday().then((routineProgresses) => {
-
-                // counts how many routines completed
-                routineProgresses.forEach((routine) => {
-                    if (routine.data().completed) {
-                        completedRoutinesTodayAmount++;
-                    }
-                });
-
-                let gooten = querySnapshot.docs.map((doc) => {
-                    let routineProgression;
-
-                    routineProgresses.forEach((routineProgress) => {
-
-                        if (routineProgress.data().routineID == doc.id) {
-                            routineProgression = routineProgress.data();
-                        }
+                fetchTaskInfo().then((taskInfo) => {
+                    let taskMap = new Map();
+                    taskInfo.docs.map((doc) => {
+                        if(!taskMap.has(doc.id))
+                            taskMap.set(doc.id, doc.data());
                     })
 
-                    let activeToday = false;
-
-                    doc.data().days.map((day) => {
-                        let today = new Date().getDay();
-                        today = today === 0 ? 7 : today;
-
-                        if (day === today && !activeToday) {
-                            activeTodayAmount++;
-
-                            activeToday = true;
+                    // counts how many routines completed
+                    routineProgresses.forEach((routine) => {
+                        if (routine.data().completed) {
+                            completedRoutinesTodayAmount++;
                         }
                     });
 
-                    return {
-                        id: doc.id,
-                        data: {
-                            ...doc.data(),
-                            "activeToday": activeToday,
-                            "routineProgression": routineProgression,
-                        },
-                    }
-                })
+                    // loop through routines
+                    let gooten = querySnapshot.docs.map((doc) => {
+                        let routineProgression;
 
-                setRoutines(gooten);
-                setRoutinesActiveToday(activeTodayAmount);
-                setRoutinesCompletedToday(completedRoutinesTodayAmount);
+
+
+                        let extendedTasks = doc.data().tasks.map((t) => {
+                            return {...t, "taskInfo" : taskMap.get(t.id)}
+                        })
+
+
+                        routineProgresses.forEach((routineProgress) => {
+
+                            if (routineProgress.data().routineID == doc.id) {
+                                routineProgression = routineProgress.data();
+                            }
+                        })
+
+                        let activeToday = false;
+
+                        doc.data().days.map((day) => {
+                            let today = new Date().getDay();
+                            today = today === 0 ? 7 : today;
+
+                            if (day === today && !activeToday) {
+                                activeTodayAmount++;
+
+                                activeToday = true;
+                            }
+                        });
+
+                        return {
+                            id: doc.id,
+                            data: {
+                                "created": doc.data().created,
+                                "days": doc.data().days,
+                                "description": doc.data().description,
+                                "name": doc.data().name,
+                                "userID": doc.data().userID,
+                                "tasks" : extendedTasks,
+                                "activeToday": activeToday,
+                                "routineProgression": routineProgression,
+                            }
+                        }
+                    })
+
+                    setRoutines(gooten);
+                    setRoutinesActiveToday(activeTodayAmount);
+                    setRoutinesCompletedToday(completedRoutinesTodayAmount);
+                })
             }).catch(() => alert("shit"));
         });
-    }, [user]);
 
+
+        // fetch taskInfo
+        // go through each and add to map
+        // store map in state
+        // then when passing props to Task use get() on map
+    }, [user]);
 
     const fetchCompletionToday = async () => {
         const dateTodayLong = new Date();
         const dateToday = dateTodayLong.getDate() + "/" + dateTodayLong.getMonth() + "/" + dateTodayLong.getFullYear()
         const completedRoutinesTodayQuery = query(collection(db, "routineCompletion"), where("userID", "==", user.uid), where("date", "==", dateToday));
         return await getDocs(completedRoutinesTodayQuery);
+    }
+
+    const fetchTaskInfo = async () => {
+        const q = query(collection(db, "tasks"), where("userID", "==", user.uid));
+        return await getDocs(q);
     }
 
     const comperator = (a, b) => {
@@ -304,6 +360,9 @@ function Routines() {
                 </Box>
 
 
+            {/*    this should happen when loading it in, cause we don't want to sort each re-render, which will happen a few times
+                because of other unrelated stuff
+            */}
             {routines.sort((a, b) => comperator(a, b)).map((routine) => (
                 <Routine key={routine.id} id={routine.id} name={routine.data.name}
                          description={routine.data.description} tasks={routine.data.tasks}
