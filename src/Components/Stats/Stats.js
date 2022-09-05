@@ -2,7 +2,9 @@ import React, {useEffect, useState} from 'react';
 import {collection, onSnapshot, query, where} from "firebase/firestore";
 import {useAuth} from "../Auth/UserAuthContext";
 import {db} from "../../firebase";
-import {Box, Grid, Typography} from "@mui/material";
+import {Box, Grid, ToggleButton, ToggleButtonGroup, Typography, Accordion, AccordionSummary, AccordionDetails} from "@mui/material";
+import {fetchRoutinesSnapshot} from "../../Services/fetchRoutinesSnapshot";
+import {ExpandMore} from "@mui/icons-material"
 
 function Stats() {
     const {user} = useAuth();
@@ -18,6 +20,9 @@ function Stats() {
     const [mostCompletedRoutine, setMostCompletedRoutine] = useState({});
     const [mostCompletedTask, setMostCompletedTask] = useState({});
 
+    const [routines, setRoutines] = useState([]);
+
+    const [routinesInDay, setRoutinesInDay] = useState(new Map());
 
     useEffect(() => {
         if(user?.uid === undefined)
@@ -88,6 +93,25 @@ function Stats() {
             setTasksCompleted(tCompleted);
         })
 
+
+        const dayRoutine = new Map();
+
+        fetchRoutinesSnapshot(user.uid, (querySnapshot) => {
+            setRoutines(querySnapshot.docs.map((doc) => ({id: doc.id, data: doc.data()})));
+
+            querySnapshot.docs.forEach((doc) => {
+                doc.data().days.forEach(day => {
+                    if(dayRoutine.has(day)){
+                        dayRoutine.get(day).push({"routineID" : doc.id})
+                    }else{
+                        dayRoutine.set(day, [{"routineID" : doc.id}])
+                    }
+                });
+            })
+
+            setRoutinesInDay(dayRoutine);
+        });
+
     }, [user]);
 
     const findBiggestValueInMap = (map) => {
@@ -104,10 +128,119 @@ function Stats() {
         return {"key" : largestValueKey, "value": largestValue}
     }
 
+    const [days, setDays] = useState(0);
+
+    const setDaysProxy = (day) => {
+        if(days === day){
+            return;
+        }
+
+        setDays(day)
+    }
+
+    const displayRoutinesInTheDay = () => {
+        if(days === 0)
+            return <></>;
+
+
+        return <>
+            {routinesInDay.get(days).map(element => {
+                const routineInfo = routines.find((x) => x.id === element.routineID);
+                console.log(routineInfo);
+
+
+                return <Box key={element.routineID} sx={{mb:2}}>
+                    <Typography>{routineInfo.data.name}</Typography>
+                    <Typography>{routineInfo.data.description}</Typography>
+                </Box>;
+            })}
+        </>;
+
+    }
+
+
+
+    const getExpectedDates = (rDays) => {
+        if(rDays === [])
+            return;
+        const dateToday = new Date();
+        const todayAsDayOfWeek = dateToday.getDay() === 0 ? 7 : dateToday.getDay();
+
+        const startingDateOfThisMonth = new Date(dateToday.getFullYear(), dateToday.getMonth(), 1).getDay();
+        const endingDateOfThisMonth = new Date(dateToday.getFullYear(), dateToday.getMonth()+1, 0).getDate();
+
+        const startingPoints = [];
+        const expectedDates = []
+
+        // create array of starting points
+        rDays.forEach((routineDay) => {
+            // ofset it so we can make sure we get the legit days before adding 7
+            startingPoints.push((routineDay - startingDateOfThisMonth) - 7 + 1);
+        })
+
+
+        startingPoints.forEach(date => {
+            while(date + 7 <= endingDateOfThisMonth){
+                date = date + 7;
+                if(date > 0)
+                    expectedDates.push(date);
+            }
+        })
+
+        return expectedDates;
+
+    }
+
+    const getBoxes = (routineID, rDays) =>{
+        const dateToday = new Date();
+
+        const boxes = new Array(new Date(dateToday.getFullYear(), dateToday.getMonth()+1, 0).getDate()).fill(0);
+
+        rDays.forEach(element => boxes[element - 1] = 1);
+        const aa = routineCompletion.filter(element => element.data.routineID === routineID);
+        aa.forEach(element => {
+            const dateSplit = element.data.date.split("/");
+            if(element.data.completed){
+                boxes[dateSplit[0] - 1] = 3;
+            }else{
+                boxes[dateSplit[0] - 1] = 2;
+            }
+        })
+
+        // ideally not gray but like a overlay, disabled kind of thing since we haven't gotten there yet
+        boxes.forEach((element, index) => {
+            if(index > new Date().getDate())
+                boxes[index] = 4;
+        })
+
+        return boxes.map((element, index) => {
+            let colour;
+            switch(boxes[index]){
+                case 0:
+                    colour = "black"
+                    break;
+                case 1:
+                    colour = "red"
+                    break;
+                case 2:
+                    colour = "orange"
+                    break;
+                case 3:
+                    colour = "green"
+                    break;
+                case 4:
+                    colour = "gray"
+                    break;
+            }
+
+            return <Box key={index} sx={{backgroundColor: colour, width:8, height:8, m:1}}></Box>;
+        })
+    }
 
     return (
         <Grid container direction={"column"} alignItems={"center"}>
-            <Box sx={{ml: 25}}>
+            <Box sx={{backgroundColor: "lightBlue", mb:4}}>
+                <Typography >This month:</Typography>
                 <Box>
                     <Typography>Routines: </Typography>
                     <Box sx={{ml: 2}}>
@@ -127,6 +260,44 @@ function Stats() {
                         {mostCompletedTask &&  <Typography>most completed task: {mostCompletedTask?.id} at: {mostCompletedTask?.value}</Typography>}
                     </Box>
                 </Box>
+            </Box>
+
+            <Box sx={{backgroundColor:"lightGreen"}}>
+                <ToggleButtonGroup sx={{mb: 1}} color={"primary"} value={days}>
+                    <ToggleButton onClick={() => setDaysProxy(1)} value={1}>Mon</ToggleButton>
+                    <ToggleButton onClick={() => setDaysProxy(2)} value={2}>Tus</ToggleButton>
+                    <ToggleButton onClick={() => setDaysProxy(3)} value={3}>Wed</ToggleButton>
+                    <ToggleButton onClick={() => setDaysProxy(4)} value={4}>Thu</ToggleButton>
+                    <ToggleButton onClick={() => setDaysProxy(5)} value={5}>Fri</ToggleButton>
+                    <ToggleButton onClick={() => setDaysProxy(6)} value={6}>Sat</ToggleButton>
+                    <ToggleButton onClick={() => setDaysProxy(7)} value={7}>Sun</ToggleButton>
+                </ToggleButtonGroup>
+                {displayRoutinesInTheDay()}
+            </Box>
+
+            <Box sx={{backgroundColor:"lightBlue"}}>
+                <Typography>Routine specific:</Typography>
+                {routines.map((routine) => {
+
+                    return <Accordion
+                        key={routine.id}
+                    >
+                        <AccordionSummary
+                            expandIcon={<ExpandMore/>}
+                        >
+                            <Typography>{routine.data.name}</Typography>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                            <Typography>
+                                {routine.data.description}
+                            </Typography>
+                            {getBoxes(routine.id, getExpectedDates(routine.data.days))}
+                        </AccordionDetails>
+                    </Accordion>
+                })}
+
+
+
             </Box>
         </Grid>
     );

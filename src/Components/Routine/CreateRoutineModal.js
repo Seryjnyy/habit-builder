@@ -4,8 +4,8 @@ import {
     Box,
     Button,
     Checkbox, Divider,
-    FormControlLabel, List,
-    Modal,
+    FormControlLabel, IconButton, List,
+    Modal, Snackbar,
     Stack,
     TextField, ToggleButton, ToggleButtonGroup,
     Typography
@@ -18,6 +18,7 @@ import {db} from "../../firebase";
 import Task from "../Task/Task";
 import TaskPlain from "./TaskPlain";
 import RoutineTask from "./RoutineTask";
+import CloseIcon from "@mui/icons-material/Close";
 
 function CreateRoutineModal(props) {
     const [openTaskCreationModal, setOpenTaskCreationModal] = useState(false);
@@ -36,6 +37,24 @@ function CreateRoutineModal(props) {
 
     const [routineTasks, setRoutineTasks] = useState([]);
     const [routineTasksLength, setRoutineTasksLength] = useState(0);
+
+    // snackbar things
+    const [snackbarMessage, setSnackbarMessage] = useState("");
+    const handleCloseSnackbar = () => {
+        setSnackbarMessage("");
+    }
+    const snackbarAction = (
+        <>
+            {/*<Button size={"small"} onClick={handleCloseSnackbar}>reload it</Button>*/}
+            <IconButton
+                size={"small"}
+                onClick={handleCloseSnackbar}
+            >
+                <CloseIcon fontSize={"small"}></CloseIcon>
+            </IconButton>
+        </>
+    )
+
 
     const addTask = (id, requirementType, requirementAmount) => {
         routineTasks.push({"id" : id, "requirementType" : requirementType, "requirementAmount" : requirementAmount });
@@ -113,7 +132,7 @@ function CreateRoutineModal(props) {
                 tasks: routineTasks,
                 days: routineDays,
                 created: Timestamp.now()
-            });
+            }).then(() => setSnackbarMessage("Routine created.")).catch(e => setSnackbarMessage("ah shii"));
 
             setRoutineDays([]);
             setRoutineTasks([]);
@@ -211,6 +230,14 @@ function CreateRoutineModal(props) {
                 </ModalBox>
             </div>
         </Modal>
+            <Snackbar
+                open={snackbarMessage != ""}
+                autoHideDuration={6000}
+                onClose={handleCloseSnackbar}
+                message={snackbarMessage}
+                action={snackbarAction}
+            >
+            </Snackbar>
         </>
     );
 }
