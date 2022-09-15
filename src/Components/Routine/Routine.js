@@ -1,15 +1,10 @@
 import React, {useEffect, useState} from 'react';
-import {Box, LinearProgress, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
+import {Box, Divider, LinearProgress, Paper, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
 import TaskToComplete from "./TaskToComplete";
 
-function Routine({id, name, description, days, activeToday, tasks, routineProgression, updateRoutineCompletion, completeRoutine}) {
+function Routine({id, name, description, days, activeToday, tasks, routineProgression, updateRoutineCompletion, hidden}) {
     const [taskProgress, setTaskProgress] = useState((routineProgression?.taskProgress === undefined ? [] : routineProgression.taskProgress));
     const [completed, setCompleted] = useState(false);
-
-    const completeTask = (taskID) => {
-        setTaskProgress([...taskProgress, taskID]);
-        // updateRoutineCompletion
-    }
 
     const [routineStatus, setRoutineStatus] = useState("")
 
@@ -40,28 +35,35 @@ function Routine({id, name, description, days, activeToday, tasks, routineProgre
     }
 
     return (
-        <Box sx={{backgroundColor : "#e0f2f1", mb: 2, p: 2, borderRadius: 2}}>
-            <Typography>ID: {id}</Typography>
-            <Typography>Name: {name}</Typography>
-            <Typography>Description: {description}</Typography>
-            <ToggleButtonGroup disabled={true} color={"primary"} value={days}>
-                <ToggleButton value={1}>Mon</ToggleButton>
-                <ToggleButton value={2}>Tus</ToggleButton>
-                <ToggleButton value={3}>Wed</ToggleButton>
-                <ToggleButton value={4}>Thu</ToggleButton>
-                <ToggleButton value={5}>Fri</ToggleButton>
-                <ToggleButton value={6}>Sat</ToggleButton>
-                <ToggleButton value={7}>Sun</ToggleButton>
-            </ToggleButtonGroup>
-            {tasks.map((task) => {
-                return <TaskToComplete key={id + task.id} task={task} completeTask={completeTask} updateRoutineCompletion={updateRoutineCompletionID} activeToday={activeToday}
-                                alreadyCompleted={taskProgress.find(element => element.id === task.id)?.amount === task.requirementAmount  ? true : false} amountComplete={taskProgress.find(element => element.id === task.id)?.amount}></TaskToComplete>
-            })}
-            <Typography>
-                Status: {routineStatus}
-            </Typography>
-            {activeToday && <Typography>Tasks left for today {tasks.length - taskProgress.filter(task => (task.completed === true)).length}</Typography>}
-            <LinearProgress sx={{mt: 2}} variant="determinate" value={taskProgress.filter(task => (task.completed === true)).length != 0 ? (taskProgress.filter(task => (task.completed === true)).length / tasks.length) * 100 : 0} />
+        <Box sx={{minWidth:{xs: "90%", sm:"90%", md:800,}, mb: 2, borderRadius: 2, mt: 2}} hidden={hidden}>
+            <Paper sx={{p:2}}>
+
+                {/*<Typography>ID: {id}</Typography>*/}
+                <Typography sx={{fontSize: 24}}>{name}</Typography>
+                {/*<span role="img" aria-label={"routine-image"}>*/}
+                {/*    {String.fromCodePoint(0x1F609)}*/}
+                {/*</span>*/}
+                <Divider sx={{mb:2}}></Divider>
+                {/*<Typography>Description: {description}</Typography>*/}
+                {activeToday && <Typography variant={"body2"} sx={{fontSize:14}}>Tasks left: {tasks.length - taskProgress.filter(task => (task.completed === true)).length}</Typography>}
+                {tasks.map((task) => {
+                    return <TaskToComplete key={id + task.id} task={task} updateRoutineCompletion={updateRoutineCompletionID} activeToday={activeToday}
+                                           alreadyCompleted={taskProgress.find(element => element.id === task.id)?.amount === task.requirementAmount  ? true : false} amountComplete={taskProgress.find(element => element.id === task.id)?.amount}></TaskToComplete>
+                })}
+                <Divider></Divider>
+                <ToggleButtonGroup sx={{mt:1}}disabled={true} color={"primary"} value={days}>
+                    <ToggleButton value={1}>Mon</ToggleButton>
+                    <ToggleButton value={2}>Tus</ToggleButton>
+                    <ToggleButton value={3}>Wed</ToggleButton>
+                    <ToggleButton value={4}>Thu</ToggleButton>
+                    <ToggleButton value={5}>Fri</ToggleButton>
+                    <ToggleButton value={6}>Sat</ToggleButton>
+                    <ToggleButton value={7}>Sun</ToggleButton>
+                </ToggleButtonGroup>
+
+                <LinearProgress sx={{mt: 2}} variant="determinate" value={taskProgress.filter(task => (task.completed === true)).length != 0 ? (taskProgress.filter(task => (task.completed === true)).length / tasks.length) * 100 : 0} />
+                <Typography>Status: {routineStatus}</Typography>
+            </Paper>
         </Box>
     );
 }

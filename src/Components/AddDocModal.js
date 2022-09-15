@@ -1,23 +1,28 @@
 import React, {useState} from "react";
-import { db } from "./firebase";
+import { db } from "../firebase";
 import { collection, addDoc, Timestamp } from "firebase/firestore";
 import {Autocomplete, Button, List, Modal, Stack, TextField, Typography} from "@mui/material";
-import {useAuth} from "./Components/Auth/UserAuthContext";
-import ModalBox from "./Components/Modal/ModalBox";
+import {useAuth} from "./Auth/UserAuthContext";
+import ModalBox from "./Modal/ModalBox";
+import LabelSelect from "./Task/LabelSelect";
 
-function AddDocModal({onClose}) {
+function AddDocModal({onClose, availableTags}) {
   const [openModal, setOpenModal] = useState(false);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [completionRequirementType, setCompletionRequirementType] = useState("null");
+  const [tags, setTags] = useState([]);
 
   let {user} = useAuth();
 
   const handleClick = async () => {
-    console.log(name);
-    console.log(description);
-    console.log(completionRequirementType);
+    // console.log(name);
+    // console.log(description);
+    // console.log(completionRequirementType);
+    // console.log(tags);
+
+    const tagsOnly = tags.map(tag => tag.value);
 
     try {
       await addDoc(collection(db, "tasks"), {
@@ -26,13 +31,14 @@ function AddDocModal({onClose}) {
         description: description,
         completionRequirementType: completionRequirementType,
         created: Timestamp.now(),
+        tags: tagsOnly
       });
     } catch (err) {
       alert(err);
     }
   };
 
-  const completionRequirementTypes = ["Time", "Amount"];
+  const completionRequirementTypes = ["Time", "Amount", "Completion"];
 
   return (
     <>
@@ -47,9 +53,11 @@ function AddDocModal({onClose}) {
               <TextField id="outlined-basic" label="Name" variant="outlined" onChange={(e) => setName(e.target.value)}/>
               <TextField id="outlined-basic" label="Description" variant="outlined" onChange={(e) => setDescription(e.target.value)}/>
               <Autocomplete renderInput={(params) => <TextField {...params}/>} options={completionRequirementTypes} onChange={(e, value) => {setCompletionRequirementType(value)}}/>
+              <LabelSelect value={tags} setValue={setTags} availableTags={availableTags.map(tag => ({value:tag, name:tag, createdNow:false}))}/>
 
               <Button
                   onClick={() => {
+                    onClose();
                     handleClick();
                   }}
               >

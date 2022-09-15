@@ -4,7 +4,7 @@ import {
     Card,
     CardActions,
     CardContent,
-    Modal, Stack, TextField,
+    Modal, Paper, Stack, TextField,
     Typography
 } from "@mui/material";
 import {useState} from "react";
@@ -23,7 +23,7 @@ function RoutineTask({id, name, description, completionRequirementType, addTaskT
     };
 
     const [added, setAdded] = useState(false);
-    const [amount, setAmount] = useState(5);
+    const [amount, setAmount] = useState(1);
     const taskRequirementLabel = completionRequirementType === "Time" ? "Minutes" : "Repetitions";
 
     const setAmountProxy = (num) => {
@@ -44,17 +44,14 @@ function RoutineTask({id, name, description, completionRequirementType, addTaskT
     }
 
     return (
-        <>
-            <Box sx={{backgroundColor:"lightBlue", p:2, borderRadius: 2}}>
+            <Paper variant={"outlined"}  sx={{mb: 1, mt: 0, p: 2, borderRadius: 2}}>
                         <Typography>Name: {name}</Typography>
                         <Typography>Description: {description}</Typography>
                         <Typography>Completion requirement type: {completionRequirementType}</Typography>
-                        <TextField sx={{mt:2}} disabled={added} type={"number"} label={taskRequirementLabel} value={amount} onChange={(e) => setAmountProxy(Number(e.target.value))}></TextField>
+                        {completionRequirementType != "Completion" && <TextField sx={{mt:2}} disabled={added} type={"number"} label={taskRequirementLabel} value={amount} onChange={(e) => setAmountProxy(Number(e.target.value))}></TextField>}
                         <Button sx={{mt:3}} disabled={added} onClick={addTask}>Add</Button>
                         <Button sx={{mt:3}} disabled={!added} onClick={removeTask}>Remove</Button>
-            </Box>
-
-        </>
+            </Paper>
     );
 }
 

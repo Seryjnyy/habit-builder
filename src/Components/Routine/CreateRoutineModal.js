@@ -11,7 +11,7 @@ import {
     Typography
 } from "@mui/material";
 import ModalBox from "../Modal/ModalBox";
-import AddDocModal from "../../AddDocModal";
+import AddDocModal from "../AddDocModal";
 import {useAuth} from "../Auth/UserAuthContext";
 import {addDoc, collection, onSnapshot, orderBy, query, Timestamp, where} from "firebase/firestore";
 import {db} from "../../firebase";
@@ -184,7 +184,7 @@ function CreateRoutineModal(props) {
     return (
         <>
         <Button onClick={() => setOpenModal(true)}>Create routine</Button>
-        <Modal open={openModal} onClose={() => setOpenModal(false)} aria-labelledby="modal-modal-title">
+        <Modal sx={{mt: 20, overflowY:"scroll"}} open={openModal} onClose={() => setOpenModal(false)} aria-labelledby="modal-modal-title">
             <div>
                 <ModalBox>
                     <Stack>

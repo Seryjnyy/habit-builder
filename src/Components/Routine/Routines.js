@@ -21,11 +21,13 @@ function Routines(){
 
     const [routinesCompletedToday, setRoutinesCompletedToday] = useState(0);
 
+    const [showAllRoutines, setShowAllRoutines] = useState(false);
+
     // snackbar things
     const [snackbarMessage, setSnackbarMessage] = useState("");
     const handleCloseSnackbar = () => {
         setSnackbarMessage("");
-    }
+    };
     const snackbarAction = (
         <>
             {/*<Button size={"small"} onClick={handleCloseSnackbar}>reload it</Button>*/}
@@ -36,18 +38,19 @@ function Routines(){
                 <CloseIcon fontSize={"small"}></CloseIcon>
             </IconButton>
         </>
-    )
+    );
 
     const updateRoutineCompletion = (routineID, taskID, amountCompleted, taskRequirementAmount, routineTaskAmount) => {
         fetchRoutineCompletionWithRef(routineID, new Date()).then((currentDoc) => {
-
+            // get progression for routine
             let taskProgressions = currentDoc.data()?.taskProgress;
-
             if(taskProgressions === undefined)
                 taskProgressions = [];
 
+            // get progression for task from routine progression
             let taskProgress = taskProgressions.find(element => element.id === taskID);
 
+            // add or update task progression
             if(taskProgress === undefined){
                 taskProgressions.push({
                     "id": taskID,
@@ -59,15 +62,10 @@ function Routines(){
                 taskProgress.completed = amountCompleted === taskRequirementAmount;
             }
 
+            // find out if routine complete
             const allRoutineTasksCompleted = taskProgressions.filter(element => element.completed === true)?.length === routineTaskAmount;
-
             if(allRoutineTasksCompleted)
                 setRoutinesCompletedToday(routinesCompletedToday + 1);
-
-
-            let snackbarMessageForRoutineUpdate = (amountCompleted === taskRequirementAmount) ? "Task completed." : "Saved progress.";
-            snackbarMessageForRoutineUpdate = allRoutineTasksCompleted ? "Task and routine completed." : snackbarMessageForRoutineUpdate;
-            // snackbarMessageForRoutineUpdate = (routinesCompletedToday + 1 > routinesActiveToday) ? "All routines complete!" : snackbarMessageForRoutineUpdate;
 
 
             setRoutineCompletion(routineID, new Date(), {
@@ -79,15 +77,18 @@ function Routines(){
                 month: new Date().getMonth() + 1,
                 date: getDateDDMMYYYY(new Date())
             }).then(() => {
-                setSnackbarMessage(snackbarMessageForRoutineUpdate)
                 if(allRoutineTasksCompleted){
                     updateRoutineStreak(routineID);
                 }
+
+                // set snackbar message
+                let snackbarMessageForRoutineUpdate = (amountCompleted === taskRequirementAmount) ? "Task completed." : "Saved progress.";
+                snackbarMessageForRoutineUpdate = allRoutineTasksCompleted ? "Task and routine completed." : snackbarMessageForRoutineUpdate;
+                // snackbarMessageForRoutineUpdate = (routinesCompletedToday + 1 > routinesActiveToday) ? "All routines complete!" : snackbarMessageForRoutineUpdate;
+                setSnackbarMessage(snackbarMessageForRoutineUpdate);
             }).catch(e => setSnackbarMessage(e.message));
 
         }).catch(err => alert(err));
-
-
     };
 
     const augh = (routineID, dateTodayLong) => {
@@ -136,7 +137,7 @@ function Routines(){
         let someDate = new Date();
         let result = someDate.setDate(someDate.getDate() + daysTillNextDay);
         return new Date(result);
-    }
+    };
 
     const updateRoutineStreak = (routineID) => {
         let newDate = augh(routineID, new Date());
@@ -152,7 +153,7 @@ function Routines(){
             if(streakDoc.data() != undefined){
                 let streakDocData = streakDoc.data();
 
-                streakStartDate  = streakDocData.streakStartDate;
+                streakStartDate = streakDocData.streakStartDate;
                 longestStreak = streakDocData.longestStreak;
                 longestStreakStartDate = streakDocData.longestStreakStartDate;
                 longestStreakEndDate = streakDocData.longestStreakEndDate;
@@ -207,28 +208,6 @@ function Routines(){
             //     longestStreakEndDate: longestStreakEndDate
             // });
         }).catch(e => alert(e.message()));
-    }
-
-    const completeRoutine = async (routineID, tasks) => {
-        // // duplicate code with updating routine completion
-        // const dateTodayLong = new Date();
-        // const customID = "" + routineID + "" + dateTodayLong.getDate() + "" + dateTodayLong.getMonth() + "" + dateTodayLong.getFullYear();
-        //
-        // const routineRef = doc(db, "routineCompletion", customID);
-        //
-        // setDoc(routineRef, {
-        //     routineID: routineID,
-        //     taskProgress: tasks.map((task) => ({
-        //         "id": task.id,
-        //         "completed": true,
-        //         "amount": task.requirementAmount
-        //     })),
-        //     completed: true,
-        //     userID: user.uid,
-        //     year: dateTodayLong.getFullYear(),
-        //     month: dateTodayLong.getMonth() + 1,
-        //     date: getDateDDMMYYYY(new Date())
-        // });
     };
 
     const getDateDDMMYYYY = (date) => {
@@ -322,8 +301,8 @@ function Routines(){
         const started = notCompleteAndNotStarted.filter(element => element.data?.routineProgression != undefined);
         const notStarted = notCompleteAndNotStarted.filter(element => element.data?.routineProgression === undefined);
 
-        return [...started, ...notStarted, ...completed, ...notActive]
-    }
+        return [...started, ...notStarted, ...completed, ...notActive];
+    };
 
     return (
         <>
@@ -339,17 +318,29 @@ function Routines(){
                 {/*    this should happen when loading it in, cause we don't want to sort each re-render, which will happen a few times
                  because of other unrelated stuff
                  */}
-                {routines.map((routine) => (
-                    <Routine key={routine.id} 
-                             id={routine.id} 
+                {routines.filter(element => element.data.activeToday).map((routine) => (
+                    <Routine key={routine.id}
+                             id={routine.id}
                              name={routine.data.name}
-                             description={routine.data.description} 
+                             description={routine.data.description}
                              tasks={routine.data.tasks}
-                             activeToday={routine.data.activeToday} 
+                             activeToday={routine.data.activeToday}
                              days={routine.data.days}
                              routineProgression={routine.data.routineProgression}
-                             updateRoutineCompletion={updateRoutineCompletion}
-                             completeRoutine={completeRoutine}>
+                             updateRoutineCompletion={updateRoutineCompletion}>
+                    </Routine>
+                ))}
+                <Button onClick={() => setShowAllRoutines(!showAllRoutines)}>Show all routines</Button>
+                {showAllRoutines && routines.filter(element => !element.data.activeToday).map((routine) => (
+                    <Routine key={routine.id}
+                             id={routine.id}
+                             name={routine.data.name}
+                             description={routine.data.description}
+                             tasks={routine.data.tasks}
+                             activeToday={routine.data.activeToday}
+                             days={routine.data.days}
+                             routineProgression={routine.data.routineProgression}
+                             updateRoutineCompletion={updateRoutineCompletion}>
                     </Routine>
                 ))}
             </Grid>

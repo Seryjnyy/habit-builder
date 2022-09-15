@@ -1,46 +1,61 @@
-import React, {useState} from 'react';
-import {Box, Button, LinearProgress, TextField, Typography} from "@mui/material";
+import React, {useEffect, useState} from 'react';
+import {Box, Button, Chip, LinearProgress, Paper, TextField, Typography} from "@mui/material";
 
-function TaskToComplete({task, completeTask, activeToday, alreadyCompleted, updateRoutineCompletion, amountComplete}) {
+function TaskToComplete({task, activeToday, alreadyCompleted, updateRoutineCompletion, amountComplete}){
     const [completed, setCompleted] = useState(alreadyCompleted);
     const [amount, setAmount] = useState(amountComplete === undefined ? 0 : amountComplete);
+    const [updateCallTimeout, setUpdateCallTimeout] = useState();
+
+    useEffect(() => {
+        console.log(task.taskInfo.tags);
+    }, []);
+
 
     const setAmountProxy = (num) => {
         if(num > task.requirementAmount || num < 0)
             return;
 
-        setAmount(num);
-    }
+        clearTimeout(updateCallTimeout);
 
-    const taskCompleted = () => {
-        setCompleted(true);
-        completeTask(task.id);
-    }
+        setAmount(num);
+
+        // task is completed
+        // avoid debounce for this just update
+        if(num === task.requirementAmount){
+            updateRoutineCompletion(task.id, task.requirementAmount, task.requirementAmount)
+            setCompleted(true);
+            return;
+        }
+
+        setUpdateCallTimeout(setTimeout(() => {
+            updateRoutineCompletion(task.id, num, task.requirementAmount)
+        }, 1000))
+    };
 
     return (
-        <Box sx={{backgroundColor: "lightBlue", mb: 1, mt: 1, p: 2, borderRadius: 2}}>
+        <Paper variant={"outlined"} sx={{mb: 1, mt: 0, p: 2, borderRadius: 2}}>
             <Box sx={{mb: 2}}>
-                <Typography>ID: {task.id}</Typography>
-                <Typography>Name: {task.taskInfo.name}</Typography>
-                <Typography>Description: {task.taskInfo.description}</Typography>
-                <Typography>Requirement amount: {task.requirementAmount}</Typography>
+                {/*<Typography>ID: {task.id}</Typography>*/}
+                <Typography sx={{fontSize: 20}}>{task.taskInfo.name}</Typography>
+                {task.taskInfo?.tags?.map(tag => (
+                    <Chip key={tag} label={tag} sx={{mr:1}}></Chip>
+                ))}
+                {/*<Typography>Description: {task.taskInfo.description}</Typography>*/}
+                {/*<Typography>Required: {task.requirementAmount}</Typography>*/}
             </Box>
 
-            <TextField disabled={(!activeToday || completed)}  type={"number"} label={task.requirementType}
-                       value={amount} onChange={(e) => setAmountProxy(Number(e.target.value))}></TextField>
+            {task.requirementType != "Completion" &&  <TextField disabled={(!activeToday || completed)} type={"number"} label={task.requirementType}
+                          value={amount} onChange={(e) => setAmountProxy(Number(e.target.value))}></TextField>}
+
             <Button disabled={(!activeToday || completed)} onClick={() => {
                 setCompleted(true);
-                setAmount(task.requirementAmount)
-                updateRoutineCompletion(task.id, task.requirementAmount, task.requirementAmount)
+                setAmount(task.requirementAmount);
+                updateRoutineCompletion(task.id, task.requirementAmount, task.requirementAmount);
             }}>Completed</Button>
-            <Button disabled={(!activeToday || completed)} onClick={() => {
-                if (amount === task.requirementAmount)
-                    setCompleted(true);
-                updateRoutineCompletion(task.id, amount, task.requirementAmount)
-            }}>Save Progress</Button>
 
-            <LinearProgress sx={{mt: 2}} variant="determinate" value={amount != 0 ? (amount / task.requirementAmount) * 100 : 0} />
-        </Box>
+            <LinearProgress sx={{mt: 2}} variant="determinate"
+                            value={amount != 0 ? (amount / task.requirementAmount) * 100 : 0}/>
+        </Paper>
     );
 }
 
