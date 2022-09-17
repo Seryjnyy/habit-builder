@@ -3,13 +3,13 @@ import {
     Button,
     Card,
     CardActions,
-    CardContent,
+    CardContent, Chip,
     Modal, Paper, Stack, TextField,
     Typography
 } from "@mui/material";
-import {useState} from "react";
+import React, {useState} from "react";
 
-function RoutineTask({id, name, description, completionRequirementType, addTaskToRoutine, removeTaskFromRoutine}) {
+function RoutineTask({id, name, description, completionRequirementType, tags, addTaskToRoutine, removeTaskFromRoutine}) {
     const style = {
         position: 'absolute',
         top: '50%',
@@ -48,6 +48,9 @@ function RoutineTask({id, name, description, completionRequirementType, addTaskT
                         <Typography>Name: {name}</Typography>
                         <Typography>Description: {description}</Typography>
                         <Typography>Completion requirement type: {completionRequirementType}</Typography>
+                        {tags?.map(tag => (
+                            <Chip key={tag} label={tag} sx={{mr:1}}></Chip>
+                        ))}
                         {completionRequirementType != "Completion" && <TextField sx={{mt:2}} disabled={added} type={"number"} label={taskRequirementLabel} value={amount} onChange={(e) => setAmountProxy(Number(e.target.value))}></TextField>}
                         <Button sx={{mt:3}} disabled={added} onClick={addTask}>Add</Button>
                         <Button sx={{mt:3}} disabled={!added} onClick={removeTask}>Remove</Button>

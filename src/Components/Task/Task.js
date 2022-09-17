@@ -6,12 +6,12 @@
     CardActions,
     CardContent,
     Checkbox, Chip,
-    createTheme,
+    createTheme, Divider,
     FormControl, FormControlLabel,
     Modal, Stack, TextField,
     Typography
 } from "@mui/material";
-    import {doc, updateDoc} from "firebase/firestore";
+    import {doc, setDoc, updateDoc} from "firebase/firestore";
     import {db} from "../../firebase"
     import LabelSelect from "./LabelSelect";
 
@@ -19,7 +19,7 @@
         const [updateModalOpen, setUpdateModalOpen] = useState(false);
 
         const [taskDescription, setTaskDescription] = useState(description);
-        const [descriptionWordCount, setDescriptionWordCount] = useState(0);
+        // const [descriptionWordCount, setDescriptionWordCount] = useState(0);
         const [taskTags, setTaskTags] = useState(tags?.map(tag => ({value:tag, name:tag, createdNow:false})));
 
         const style = {
@@ -34,12 +34,17 @@
             p: 4,
         };
 
-        const updateLocalDescriptionAndCount = () => {
-            // setTaskDescription()
-        }
-
         const updateTask = () => {
 
+            // convert tags to pure form
+            const finalTags = taskTags.map((tag) => tag.value);
+
+            const taskRef = doc(db, "tasks", id);
+            setDoc(taskRef, {
+                description: taskDescription,
+                tags: finalTags
+            }, {merge:true}).catch((e) => alert(e.message()));
+            setUpdateModalOpen(false);
         }
 
         return (
@@ -69,23 +74,21 @@
                                         </Typography>
 
                                         <TextField
+                                            sx={{mb:2}}
                                             id="outlined-helperText"
-                                            label="Helper text"
+                                            label="Description"
                                             value={taskDescription != undefined ? taskDescription : ""}
                                             onChange={(e) => {
                                                 setTaskDescription(e.target.value)
-                                                updateLocalDescriptionAndCount();
                                             }}
-                                            helperText={descriptionWordCount + "/200"}
                                         />
-                                        <Typography>Remove and Add tags</Typography>
                                         <Box>
                                             {/*needs the autocomplete from addDocModal*/}
                                             {/*now needs to actually update the doc if there are changes*/}
                                             <LabelSelect value={taskTags != undefined ? taskTags : []} setValue={setTaskTags} availableTags={availableTags.map(tag => ({value:tag, name:tag, createdNow:false}))}/>
                                         </Box>
                                     </Stack>
-                                    <Button onClick={updateTask}>Update</Button>
+                                    <Button sx={{mt:4}} onClick={updateTask}>Update</Button>
                                 </Box>
                             </Modal>
                         </CardActions>

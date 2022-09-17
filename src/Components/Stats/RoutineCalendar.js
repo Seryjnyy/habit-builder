@@ -1,8 +1,8 @@
 import React from 'react';
 import {Box, Grid, Paper} from "@mui/material";
 
-function RoutineCalendar({routineID, routineDays,routineCompletion}){
-    const getExpectedDates = (rDays) => {
+function RoutineCalendar({routineID, routineDays,routineCompletion, routineCreationDate}){
+    const getExpectedDates = (rDays, minimumStartDate) => {
         if(rDays === [])
             return;
         const dateToday = new Date();
@@ -24,7 +24,7 @@ function RoutineCalendar({routineID, routineDays,routineCompletion}){
         startingPoints.forEach(date => {
             while(date + 7 <= endingDateOfThisMonth){
                 date = date + 7;
-                if(date > 0)
+                if(date > 0 && date >= minimumStartDate)
                     expectedDates.push(date);
             }
         })
@@ -37,8 +37,20 @@ function RoutineCalendar({routineID, routineDays,routineCompletion}){
         const dateToday = new Date();
         const boxes = new Array(new Date(dateToday.getFullYear(), dateToday.getMonth()+1, 0).getDate()).fill(0);
 
+
+        //
+        let minimum = 0;
+        if(routineCreationDate.toDate().getMonth() === dateToday.getMonth()){
+            minimum = routineCreationDate.toDate().getDate();
+
+        }
+
+
+
+
+
         // set the expected days
-        routineDays.forEach(day => boxes[day - 1] = 1);
+        getExpectedDates(routineDays, minimum).forEach(day => boxes[day - 1] = 1);
         const aa = routineCompletion.filter(element => element.data.routineID === routineID);
 
         aa.forEach(element => {
@@ -51,9 +63,11 @@ function RoutineCalendar({routineID, routineDays,routineCompletion}){
         })
 
         // ideally not gray but like a overlay, disabled kind of thing since we haven't gotten there yet
+        // add 10 to show that day hasn't happened yet
         boxes.forEach((element, index) => {
-            if(index > new Date().getDate())
-                boxes[index] = 4;
+            if(index >= new Date().getDate()){
+                boxes[index] += 10;
+            }
         })
 
         // create elements before the first day to do offset, so a 1st day that is a Thur is on the Thur column
@@ -73,8 +87,16 @@ function RoutineCalendar({routineID, routineDays,routineCompletion}){
             sx={{width:448, height: 320}}
         >
             {boxesWithFiller.map((element, index) => {
-                console.log(element);
+                let opacity = 1;
                 let colour;
+                let borderColour = "none";
+
+                // get the box that represents today
+                // date today + filler box amount shows the day
+                if((index + 1) === dateToday.getDate() + fillerArray.length){
+                    borderColour = "#4fc3f7";
+                }
+
                 switch(element){
                     case 0:
                         // for all days in month
@@ -92,17 +114,34 @@ function RoutineCalendar({routineID, routineDays,routineCompletion}){
                         // completed
                         colour = "green"
                         break;
-                    case 4:
-                        // future days that haven't happened yet
-                        colour = "gray"
-                        break;
                     case 5:
                         // filler boxes at the start
                         // colour = "white"
                         break;
+                    case 10:
+                        // for all days in month
+                        colour = "black"
+                        opacity = 0.4;
+                        break;
+                    case 11:
+                        // expected days, if not overridden then not attempted nor completed
+                        colour = "blue"
+                        opacity = 0.4;
+                        break;
+                        // TODO: 12 and 13 probably not needed, since you can't have completed something that hasn't heppened yet
+                    case 12:
+                        // attempted
+                        colour = "orange"
+                        opacity = 0.4;
+                        break;
+                    case 13:
+                        // completed
+                        colour = "green"
+                        opacity = 0.4;
+                        break;
                 }
 
-                return <Grid key={index} item xs={1.714}><Paper variant={"outlined"} square sx={{backgroundColor: colour, width:64, height:64}}></Paper></Grid>;
+                return <Grid key={index} item xs={1.714}><Paper variant={"outlined"} square sx={{backgroundColor: colour, width:64, height:64, opacity:opacity, borderColor:borderColour}}></Paper></Grid>;
             })}
         </Grid>
     }

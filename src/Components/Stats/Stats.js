@@ -5,8 +5,6 @@ import {db} from "../../firebase";
 import {
     Box,
     Grid,
-    ToggleButton,
-    ToggleButtonGroup,
     Typography,
     Accordion,
     AccordionSummary,
@@ -16,9 +14,35 @@ import {
 import {fetchRoutinesSnapshot} from "../../Services/fetchRoutinesSnapshot";
 import {ExpandMore} from "@mui/icons-material";
 import RoutineCalendar from "./RoutineCalendar";
-import Routines from "../Routine/Routines";
 import RoutineSpecificAccordion from "./RoutineSpecificAccordion";
-import routine from "../Routine/Routine";
+import RoutinesInDay from "./RoutinesInDay";
+
+class ErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false };
+    }
+
+    static getDerivedStateFromError(error) {
+        // Update state so the next render will show the fallback UI.
+        return { hasError: true };
+    }
+
+    componentDidCatch(error, errorInfo) {
+        // You can also log the error to an error reporting service
+        // logErrorToMyService(error, errorInfo);
+        console.log(errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            // You can render any custom fallback UI
+            return <h1>Something went wrong.</h1>;
+        }
+
+        return this.props.children;
+    }
+}
 
 function Stats(){
     const {user} = useAuth();
@@ -37,8 +61,6 @@ function Stats(){
     const [routines, setRoutines] = useState([]);
 
     const [routinesInDay, setRoutinesInDay] = useState(new Map());
-
-    const [days, setDays] = useState(0);
 
     useEffect(() => {
         if(user?.uid === undefined)
@@ -144,83 +166,39 @@ function Stats(){
         return {"key": largestValueKey, "value": largestValue};
     };
 
-    const setDaysProxy = (day) => {
-        if(days === day){
-            return;
-        }
-
-        setDays(day);
-    };
-
-    const displayRoutinesInTheDay = () => {
-        if(days === 0)
-            return <></>;
-
-
-        return <>
-            {routinesInDay.get(days).map(element => {
-                const routineInfo = routines.find((x) => x.id === element.routineID);
-                console.log(routineInfo);
-
-
-                return <Paper variant={"outlined"} key={element.routineID} sx={{mb: 2, p:2}}>
-                    <Typography>Name: {routineInfo.data.name}</Typography>
-                    <Typography>Description: {routineInfo.data.description}</Typography>
-                </Paper>;
-            })}
-        </>;
-
-    };
-
-    const routineSpecific = useMemo(() => {
-        return <RoutineSpecificAccordion routines={routines}
-                                         routineCompletion={routineCompletion}></RoutineSpecificAccordion>;
-    }, [routines, routineCompletion]);
-
     return (
         <Grid container direction={"column"} alignItems={"center"}>
-            <Paper sx={{mb: 2, p:2}}>
-                <Typography variant={"h5"}>Stats this month</Typography>
-                <Divider sx={{mb:2}}/>
-                <Paper variant={"outlined"} sx={{p:2}}>
-                    <Typography>Routines: </Typography>
-                    <Box sx={{ml: 2}}>
-                        <Typography>attempted this month: {routineCompletion.length}</Typography>
-                        <Typography>completed this month: {routinesCompleted}</Typography>
-                        {mostAttemptedRoutine && <Typography>most attempted
-                            routine: {mostAttemptedRoutine?.id} at: {mostAttemptedRoutine?.value}</Typography>}
-                        {mostCompletedRoutine && <Typography>most completed
-                            routine: {mostCompletedRoutine?.id} at: {mostCompletedRoutine?.value}</Typography>}
-                    </Box>
+                <Paper sx={{mb: 2, p:2}}>
+                    <Typography variant={"h5"}>Stats this month</Typography>
+                    <Divider sx={{mb:2}}/>
+                    <Paper variant={"outlined"} sx={{p:2}}>
+                        <Typography>Routines: </Typography>
+                        <Box sx={{ml: 2}}>
+                            <Typography>attempted this month: {routineCompletion.length}</Typography>
+                            <Typography>completed this month: {routinesCompleted}</Typography>
+                            {mostAttemptedRoutine && <Typography>most attempted
+                                routine: {mostAttemptedRoutine ? routines.find(routine => routine.id === mostAttemptedRoutine.id)?.data.name : ""} at: {mostAttemptedRoutine?.value}</Typography>}
+                            {mostCompletedRoutine && <Typography>most completed
+                                routine: {mostCompletedRoutine ? routines.find(routine => routine.id === mostCompletedRoutine.id)?.data.name : ""} at: {mostCompletedRoutine?.value}</Typography>}
+                        </Box>
+                    </Paper>
+
+                    <Paper variant={"outlined"} sx={{p:2}}>
+                        <Typography>Tasks: </Typography>
+                        <Box sx={{ml: 2}}>
+                            <Typography>attempted this month: {tasksAttempted}</Typography>
+                            <Typography>completed this month: {tasksCompleted}</Typography>
+                            {mostAttemptedTask && <Typography>most attempted
+                                task: {mostAttemptedTask?.id} at: {mostAttemptedTask?.value}</Typography>}
+                            {mostCompletedTask && <Typography>most completed
+                                task: {mostCompletedTask?.id} at: {mostCompletedTask?.value}</Typography>}
+                        </Box>
+                    </Paper>
                 </Paper>
 
-                <Paper variant={"outlined"} sx={{p:2}}>
-                    <Typography>Tasks: </Typography>
-                    <Box sx={{ml: 2}}>
-                        <Typography>attempted this month: {tasksAttempted}</Typography>
-                        <Typography>completed this month: {tasksCompleted}</Typography>
-                        {mostAttemptedTask && <Typography>most attempted
-                            task: {mostAttemptedTask?.id} at: {mostAttemptedTask?.value}</Typography>}
-                        {mostCompletedTask && <Typography>most completed
-                            task: {mostCompletedTask?.id} at: {mostCompletedTask?.value}</Typography>}
-                    </Box>
-                </Paper>
-            </Paper>
 
-            <Paper sx={{mb:2, p:2}}>
-                <Typography variant={"h5"}>See routines on each day</Typography>
-                <Divider sx={{mb:2}}/>
-                <ToggleButtonGroup sx={{mb: 1}} color={"primary"} value={days}>
-                    <ToggleButton onClick={() => setDaysProxy(1)} value={1}>Mon</ToggleButton>
-                    <ToggleButton onClick={() => setDaysProxy(2)} value={2}>Tus</ToggleButton>
-                    <ToggleButton onClick={() => setDaysProxy(3)} value={3}>Wed</ToggleButton>
-                    <ToggleButton onClick={() => setDaysProxy(4)} value={4}>Thu</ToggleButton>
-                    <ToggleButton onClick={() => setDaysProxy(5)} value={5}>Fri</ToggleButton>
-                    <ToggleButton onClick={() => setDaysProxy(6)} value={6}>Sat</ToggleButton>
-                    <ToggleButton onClick={() => setDaysProxy(7)} value={7}>Sun</ToggleButton>
-                </ToggleButtonGroup>
-                {displayRoutinesInTheDay()}
-            </Paper>
+
+            <RoutinesInDay routines={routines} routinesInDay={routinesInDay}/>
 
             <Paper sx={{p:2}}>
                 <Typography variant={"h5"}>Routine specific stats</Typography>
@@ -251,7 +229,7 @@ function Stats(){
                                     <Typography>Sun</Typography>
                                 </Box>
                                 <RoutineCalendar routineID={routine.id} routineDays={routine.data.days}
-                                                 routineCompletion={routineCompletion}></RoutineCalendar>
+                                                 routineCompletion={routineCompletion} routineCreationDate={routine.data.created}></RoutineCalendar>
                             </Paper>
 
                         </AccordionDetails>

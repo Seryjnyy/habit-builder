@@ -82,7 +82,7 @@ function CreateRoutineModal(props) {
 
     // fetches tasks
     useEffect(() => {
-        const q = query(collection(db, "tasks"), orderBy("created", "desc"));
+        const q = query(collection(db, "tasks"), orderBy("created", "desc"), where("userID", "==", user.uid));
         onSnapshot(q, (querySnapshot) => {
             setUserTasks(
                 querySnapshot.docs.map((doc) => ({
@@ -205,7 +205,7 @@ function CreateRoutineModal(props) {
                         <List>
                             {userTasks.map(task => (
                                 <Box sx={{mb:1, mt:1}} key={task.id}>
-                                    <RoutineTask id={task.id} name={task.data.name} description={task.data.description} completionRequirementType={task.data.completionRequirementType} addTaskToRoutine={addTask} removeTaskFromRoutine={removeTask}></RoutineTask>
+                                    <RoutineTask id={task.id} name={task.data.name} tags={task.data?.tags} description={task.data.description} completionRequirementType={task.data.completionRequirementType} addTaskToRoutine={addTask} removeTaskFromRoutine={removeTask}></RoutineTask>
                                 </Box>
 
                             ))}
