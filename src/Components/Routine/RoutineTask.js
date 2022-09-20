@@ -7,7 +7,7 @@ import {
     Modal, Paper, Stack, TextField,
     Typography
 } from "@mui/material";
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 
 function RoutineTask({id, name, description, completionRequirementType, tags, addTaskToRoutine, removeTaskFromRoutine}) {
     const style = {
@@ -21,6 +21,11 @@ function RoutineTask({id, name, description, completionRequirementType, tags, ad
         boxShadow: 24,
         p: 4,
     };
+
+    useEffect(() => {
+        console.log("we rerendering babty");
+    }, []);
+
 
     const [added, setAdded] = useState(false);
     const [amount, setAmount] = useState(1);

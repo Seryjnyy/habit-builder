@@ -36,7 +36,6 @@ function App() {
                     <Box sx={{overflowX:"hidden"}}>
                         <Navbar></Navbar>
                         <Box sx={{mt:10}}>
-                            {theme.palette.mode} mode
                             <Routes>
                                 <Route path={"/"} element={<LandingPage></LandingPage>}></Route>
                                 <Route path={"/login"} element={<Login></Login>}></Route>

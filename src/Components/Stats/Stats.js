@@ -1,7 +1,5 @@
 import React, {useEffect, useMemo, useState} from 'react';
-import {collection, onSnapshot, query, where} from "firebase/firestore";
 import {useAuth} from "../Auth/UserAuthContext";
-import {db} from "../../firebase";
 import {
     Box,
     Grid,
@@ -16,33 +14,7 @@ import {ExpandMore} from "@mui/icons-material";
 import RoutineCalendar from "./RoutineCalendar";
 import RoutineSpecificAccordion from "./RoutineSpecificAccordion";
 import RoutinesInDay from "./RoutinesInDay";
-
-class ErrorBoundary extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = { hasError: false };
-    }
-
-    static getDerivedStateFromError(error) {
-        // Update state so the next render will show the fallback UI.
-        return { hasError: true };
-    }
-
-    componentDidCatch(error, errorInfo) {
-        // You can also log the error to an error reporting service
-        // logErrorToMyService(error, errorInfo);
-        console.log(errorInfo);
-    }
-
-    render() {
-        if (this.state.hasError) {
-            // You can render any custom fallback UI
-            return <h1>Something went wrong.</h1>;
-        }
-
-        return this.props.children;
-    }
-}
+import {fetchRoutineCompletionSpecificMonthSnapshot} from "../../Services/fetchRoutineCompletionSpecificMonthSnapshot";
 
 function Stats(){
     const {user} = useAuth();
@@ -67,8 +39,8 @@ function Stats(){
             return;
 
         const date = new Date();
-        const q = query(collection(db, "routineCompletion"), where("userID", "==", user.uid), where("year", "==", date.getFullYear()), where("month", "==", date.getMonth() + 1));
-        onSnapshot(q, (querySnapshot) => {
+
+        fetchRoutineCompletionSpecificMonthSnapshot(user.uid, date.getFullYear(), date.getMonth() + 1,  (querySnapshot) => {
             let rCompleted = 0;
             let tAttempted = 0;
             let tCompleted = 0;
@@ -78,6 +50,8 @@ function Stats(){
 
             let rCompletedMap = new Map();
             let tCompletedMap = new Map();
+
+            console.log(querySnapshot.docs[0].data());
 
             setRoutineCompletion(querySnapshot.docs.map(doc => {
                 const docData = doc.data();
@@ -218,16 +192,6 @@ function Stats(){
                                 {routine.data.description}
                             </Typography>
                             <Paper variant={"outlined"} sx={{p:5}}>
-                                <Typography>Calendar:</Typography>
-                                <Box sx={{display:"flex", justifyContent:"space-between"}} >
-                                    <Typography>Mon</Typography>
-                                    <Typography>Tue</Typography>
-                                    <Typography>Wed</Typography>
-                                    <Typography>Thu</Typography>
-                                    <Typography>Fri</Typography>
-                                    <Typography>Sat</Typography>
-                                    <Typography>Sun</Typography>
-                                </Box>
                                 <RoutineCalendar routineID={routine.id} routineDays={routine.data.days}
                                                  routineCompletion={routineCompletion} routineCreationDate={routine.data.created}></RoutineCalendar>
                             </Paper>

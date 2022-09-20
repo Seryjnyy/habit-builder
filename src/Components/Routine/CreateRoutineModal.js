@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
     Autocomplete,
     Box,
@@ -13,12 +13,16 @@ import {
 import ModalBox from "../Modal/ModalBox";
 import AddDocModal from "../AddDocModal";
 import {useAuth} from "../Auth/UserAuthContext";
-import {addDoc, collection, onSnapshot, orderBy, query, Timestamp, where} from "firebase/firestore";
-import {db} from "../../firebase";
 import Task from "../Task/Task";
 import TaskPlain from "./TaskPlain";
 import RoutineTask from "./RoutineTask";
 import CloseIcon from "@mui/icons-material/Close";
+import {fetchTasksSnapshot} from "../../Services/fetchTasksSnapshot";
+import {addRoutine} from "../../Services/addRoutine";
+import CreateTask from "../CreateTask";
+import {getAvailableTagsFromTasks} from "../../Services/getAvailableTagsFromTasks";
+
+const MAX_TASK_AMOUNT = 16;
 
 function CreateRoutineModal(props) {
     const [openTaskCreationModal, setOpenTaskCreationModal] = useState(false);
@@ -56,34 +60,43 @@ function CreateRoutineModal(props) {
     )
 
 
-    const addTask = (id, requirementType, requirementAmount) => {
-        routineTasks.push({"id" : id, "requirementType" : requirementType, "requirementAmount" : requirementAmount });
+    const addTask = useCallback(
+        (id, requirementType, requirementAmount) => {
+            routineTasks.push({"id" : id, "requirementType" : requirementType, "requirementAmount" : requirementAmount });
 
-        setRoutineTasksLength(routineTasks.length);
+            setRoutineTasksLength(routineTasks.length);
 
-        if(routineTasks.length <= 10){
-            if(routineTasksError != "")
-                setRoutineTasksError("");
-        }
-    };
+            if(routineTasks.length <= 10){
+                if(routineTasksError != "")
+                    setRoutineTasksError("");
+            }
+        },
+        []
+    );
 
-    const removeTask = (id) => {
-        let index = routineTasks.map((task) => {
-            return task;
-        }).indexOf(id);
+    const removeTask = useCallback(
+        (id) => {
+            let index = routineTasks.map((task) => {
+                return task;
+            }).indexOf(id);
 
-        routineTasks.splice(index, 1);
+            routineTasks.splice(index, 1);
 
-        setRoutineTasksLength(routineTasks.length);
+            setRoutineTasksLength(routineTasks.length);
 
-        if(routineTasks.length <= 0)
-            setRoutineTasksError("Routine requires at least 1 task.");
-    };
+            if(routineTasks.length <= 0)
+                setRoutineTasksError("Routine requires at least 1 task.");
+        },
+        []
+    );
 
     // fetches tasks
     useEffect(() => {
-        const q = query(collection(db, "tasks"), orderBy("created", "desc"), where("userID", "==", user.uid));
-        onSnapshot(q, (querySnapshot) => {
+        if(user.uid === undefined)
+            return;
+
+        console.log("hello");
+        fetchTasksSnapshot(user.uid, (querySnapshot) => {
             setUserTasks(
                 querySnapshot.docs.map((doc) => ({
                     id: doc.id,
@@ -91,7 +104,7 @@ function CreateRoutineModal(props) {
                 }))
             );
         });
-    }, []);
+    }, [user]);
 
 
     const validateAndAddRoutine = () => {
@@ -125,14 +138,9 @@ function CreateRoutineModal(props) {
         setRoutineTasksError("");
 
         try{
-            addDoc(collection(db, "routine"), {
-                userID : user.uid,
-                name: routineName,
-                description: routineDescription,
-                tasks: routineTasks,
-                days: routineDays,
-                created: Timestamp.now()
-            }).then(() => setSnackbarMessage("Routine created.")).catch(e => setSnackbarMessage("ah shii"));
+            addRoutine(user.uid, routineName, routineDescription, routineTasks, routineDays)
+                .then(() => setSnackbarMessage("Routine created."))
+                .catch(e => setSnackbarMessage(e.message));
 
             setRoutineDays([]);
             setRoutineTasks([]);
@@ -142,9 +150,6 @@ function CreateRoutineModal(props) {
         }
         setOpenModal(false);
     }
-
-
-
 
     const setRoutineDaysProxy = (newDays) => {
         setRoutineDays(newDays);
@@ -181,6 +186,30 @@ function CreateRoutineModal(props) {
         setDescriptionError("");
     }
 
+    const [taskListComponents, setTaskListComponents] = useState(null);
+
+    const taskList = useMemo(() => {
+        setTaskListComponents(userTasks.map(task => {
+            console.log("this mapping still happens");
+            return <Box sx={{mb: 1, mt: 1}} key={task.id}>
+                <RoutineTask id={task.id} name={task.data.name} tags={task.data?.tags}
+                             description={task.data.description}
+                             completionRequirementType={task.data.completionRequirementType}
+                             addTaskToRoutine={addTask}
+                             removeTaskFromRoutine={removeTask}></RoutineTask>
+            </Box>;
+
+        }))
+    }, [userTasks]);
+
+
+    const getTaskCreationComponent = () => {
+        if(userTasks.length >= MAX_TASK_AMOUNT)
+            return <Typography sx={{fontSize:14, color:"orange"}}>*Sorry, can't create more tasks.</Typography>
+        else if(openTaskCreationModal)
+            return <CreateTask availableTags={getAvailableTagsFromTasks(userTasks)} actionAfterSubmission={() => setOpenTaskCreationModal(false)} setSnackbarMessage={setSnackbarMessage}></CreateTask>;
+    }
+
     return (
         <>
         <Button onClick={() => setOpenModal(true)}>Create routine</Button>
@@ -203,15 +232,10 @@ function CreateRoutineModal(props) {
                         <Typography sx={{color:"#D32F2F", fontSize:12, ml:2}}>{routineTasksError}</Typography>
                         <Divider></Divider>
                         <List>
-                            {userTasks.map(task => (
-                                <Box sx={{mb:1, mt:1}} key={task.id}>
-                                    <RoutineTask id={task.id} name={task.data.name} tags={task.data?.tags} description={task.data.description} completionRequirementType={task.data.completionRequirementType} addTaskToRoutine={addTask} removeTaskFromRoutine={removeTask}></RoutineTask>
-                                </Box>
-
-                            ))}
+                            {taskListComponents}
                         </List>
-                        <Button sx={{mb:1}} onChange={() => setOpenTaskCreationModal(true)}>Create task</Button>
-                        {openTaskCreationModal && <AddDocModal></AddDocModal>}
+                        <Button disabled={userTasks.length >= MAX_TASK_AMOUNT} sx={{mb:1}} onClick={() => setOpenTaskCreationModal(!openTaskCreationModal)}>Create task</Button>
+                            {getTaskCreationComponent()}
                         <Divider sx={{mb:3}}></Divider>
 
                         <Typography>Repeat days</Typography>

@@ -1,7 +1,7 @@
 import React from "react";
 import { useAuth } from "./UserAuthContext";
 import { Button } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import {useLocation, useNavigate} from "react-router-dom";
 
 
 // should have the redirect version for mobile users
@@ -9,6 +9,9 @@ import { useNavigate } from "react-router-dom";
 function Login(props) {
   const userAuth = useAuth();
   let navigate = useNavigate();
+  let location = useLocation();
+
+  const redirectPath = location.state?.path || '/';
 
   const Logout = () => {
       userAuth.logout();
@@ -21,8 +24,7 @@ function Login(props) {
         // The signed-in user info.
         const user = result.user;
 
-        //redirect user
-          navigate("/task-manager");
+        navigate(redirectPath, {replace:true});
       })
       .catch((error) => {
         // Handle Errors here.

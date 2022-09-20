@@ -1,11 +1,12 @@
 import React, {useEffect, useState} from "react";
-import {db} from "../../firebase.js";
-import {collection, query, orderBy, onSnapshot, where} from "firebase/firestore";
-import {Button, Snackbar, Stack} from "@mui/material";
+import {Button, Snackbar, Stack, Typography} from "@mui/material";
 import "../AddDocModal";
 import AddDocModal from "../AddDocModal";
 import Task from "./Task";
 import {useAuth} from "../Auth/UserAuthContext";
+import {fetchTasksSnapshot} from "../../Services/fetchTasksSnapshot";
+
+const MAX_TASK_AMOUNT = 16;
 
 function TaskManager(){
     const [openAddModal, setOpenAddModal] = useState(false);
@@ -19,11 +20,9 @@ function TaskManager(){
 
         const tagSet = new Set();
 
-        const q = query(collection(db, "tasks"), where("userID", "==", user.uid), orderBy("created", "desc"));
-        onSnapshot(q, (querySnapshot) => {
+        fetchTasksSnapshot(user.uid, (querySnapshot) => {
             setTasks(
                 querySnapshot.docs.map((doc) => {
-
 
                     if(doc.data()?.tags){
                         doc.data().tags.forEach(tag => {
@@ -31,7 +30,6 @@ function TaskManager(){
                         });
                     }
                     setTags(Array.from(tagSet));
-                    console.log(Array.from(tagSet));
 
                     return {
                         id: doc.id,
@@ -39,17 +37,21 @@ function TaskManager(){
                     };
                 })
             );
-        });
+        })
+
     }, [user]);
+
+
     return (
         <>
             <Stack>
                 {tasks.map(task => (
-                    <Task id={task.id} key={task.id} name={task.data.name} description={task.data.description} tags={task.data.tags} availableTags={tags}
-                          completionRequirementType={task.data.completionRequirementType}></Task>
+                    <Task key={task.id} task={task} availableTags={tags}></Task>
                 ))}
             </Stack>
-            <Button onClick={() => setOpenAddModal(true)}>Create task</Button>
+            <Button disabled={tasks.length >= MAX_TASK_AMOUNT} onClick={() => setOpenAddModal(true)}>Create task</Button>
+            {(tasks.length >= MAX_TASK_AMOUNT) &&  <Typography sx={{fontSize:14, color:"orange"}}>*Sorry, can't create more tasks.</Typography>}
+
             <AddDocModal onClose={() => {
                 setOpenAddModal(false);
             }} availableTags={tags} open={openAddModal}></AddDocModal>

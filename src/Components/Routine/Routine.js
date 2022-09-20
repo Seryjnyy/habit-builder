@@ -47,6 +47,7 @@ function Routine({id, name, description, days, activeToday, tasks, routineProgre
                 {/*<Typography>Description: {description}</Typography>*/}
                 {activeToday && <Typography variant={"body2"} sx={{fontSize:14}}>Tasks left: {tasks.length - taskProgress.filter(task => (task.completed === true)).length}</Typography>}
                 {tasks.map((task) => {
+                    console.log(task);
                     return <TaskToComplete key={id + task.id} task={task} updateRoutineCompletion={updateRoutineCompletionID} activeToday={activeToday}
                                            alreadyCompleted={taskProgress.find(element => element.id === task.id)?.amount === task.requirementAmount  ? true : false} amountComplete={taskProgress.find(element => element.id === task.id)?.amount}></TaskToComplete>
                 })}

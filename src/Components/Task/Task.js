@@ -6,7 +6,7 @@
     CardActions,
     CardContent,
     Checkbox, Chip,
-    createTheme, Divider,
+    createTheme, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider,
     FormControl, FormControlLabel,
     Modal, Stack, TextField,
     Typography
@@ -15,12 +15,13 @@
     import {db} from "../../firebase"
     import LabelSelect from "./LabelSelect";
 
-    function Task({id, name, description, completionRequirementType, tags, availableTags}) {
+    function Task({task, availableTags}) {
         const [updateModalOpen, setUpdateModalOpen] = useState(false);
+        const [openDeleteTaskDialog, setOpenDeleteTaskDialog] = useState(false);
 
-        const [taskDescription, setTaskDescription] = useState(description);
+        const [taskDescription, setTaskDescription] = useState(task.data.description);
         // const [descriptionWordCount, setDescriptionWordCount] = useState(0);
-        const [taskTags, setTaskTags] = useState(tags?.map(tag => ({value:tag, name:tag, createdNow:false})));
+        const [taskTags, setTaskTags] = useState(task.data.tags?.map(tag => ({value:tag, name:tag, createdNow:false})));
 
         const style = {
             position: 'absolute',
@@ -39,7 +40,7 @@
             // convert tags to pure form
             const finalTags = taskTags.map((tag) => tag.value);
 
-            const taskRef = doc(db, "tasks", id);
+            const taskRef = doc(db, "tasks", task.id);
             setDoc(taskRef, {
                 description: taskDescription,
                 tags: finalTags
@@ -47,21 +48,46 @@
             setUpdateModalOpen(false);
         }
 
+
         return (
             <>
                 <Box>
                     <Card sx={{mb:2}}>
                         <CardContent>
                             {/*<Typography>{id}</Typography>*/}
-                            <Typography>Name: {name}</Typography>
-                            <Typography>Description: {description}</Typography>
-                            <Typography>Completion requirement type: {completionRequirementType}</Typography>
+                            <Typography>Name: {task.data.name}</Typography>
+                            <Typography>Description: {task.data.description}</Typography>
+                            <Typography>in routines: {task.data.inRoutines ? "it is" : "no"}</Typography>
+                            <Typography>Completion requirement type: {task.data.completionRequirementType}</Typography>
                             {taskTags?.map(tag => (
                                 <Chip key={tag.value} label={tag.value} sx={{mr:1}}></Chip>
                             ))}
                         </CardContent>
                         <CardActions>
                             <Button onClick={() => {setUpdateModalOpen(true)}}>Update</Button>
+                            <Button onClick={() => {setOpenDeleteTaskDialog(true)}}>Delete</Button>
+                            <Dialog
+                                open={openDeleteTaskDialog}
+                                onClose={() => setOpenDeleteTaskDialog(false)}
+                                aria-labelledby="alert-dialog-title"
+                                aria-describedby="alert-dialog-description"
+                            >
+                                <DialogTitle id="alert-dialog-title">
+                                    Are you sure you want to delete this task?
+                                </DialogTitle>
+                                <DialogContent>
+                                    <DialogContentText id="alert-dialog-description">
+                                        Let Google help apps determine location. This means sending anonymous
+                                        location data to Google, even when no apps are running.
+                                    </DialogContentText>
+                                </DialogContent>
+                                <DialogActions>
+                                    <Button>Disagree</Button>
+                                    <Button  autoFocus>
+                                        Agree
+                                    </Button>
+                                </DialogActions>
+                            </Dialog>
                             <Modal
                                 open={updateModalOpen}
                                 onClose={() => setUpdateModalOpen(false)}

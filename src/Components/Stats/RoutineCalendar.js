@@ -1,7 +1,22 @@
-import React from 'react';
-import {Box, Grid, Paper} from "@mui/material";
+import React, {useState} from 'react';
+import {
+    Box,
+    Button,
+    Divider,
+    Grid,
+    List,
+    Modal,
+    Paper,
+    Stack,
+    TextField, ToggleButton,
+    ToggleButtonGroup,
+    Typography
+} from "@mui/material";
+import ModalBox from "../Modal/ModalBox";
 
-function RoutineCalendar({routineID, routineDays,routineCompletion, routineCreationDate}){
+function RoutineCalendar({routineID, routineDays, routineCompletion, routineCreationDate}){
+    const [modalData, setModalData] = useState(null);
+
     const getExpectedDates = (rDays, minimumStartDate) => {
         if(rDays === [])
             return;
@@ -90,12 +105,16 @@ function RoutineCalendar({routineID, routineDays,routineCompletion, routineCreat
                 let opacity = 1;
                 let colour;
                 let borderColour = "none";
+                let dateNumber = 0;
 
                 // get the box that represents today
                 // date today + filler box amount shows the day
                 if((index + 1) === dateToday.getDate() + fillerArray.length){
                     borderColour = "#4fc3f7";
                 }
+
+                if(index >= dateNumber + fillerArray.length)
+                    dateNumber = (index + 1) - fillerArray.length;
 
                 switch(element){
                     case 0:
@@ -105,6 +124,8 @@ function RoutineCalendar({routineID, routineDays,routineCompletion, routineCreat
                     case 1:
                         // expected days, if not overridden then not attempted nor completed
                         colour = "red"
+                        if(borderColour != "none")
+                            colour="blue";
                         break;
                     case 2:
                         // attempted
@@ -141,12 +162,69 @@ function RoutineCalendar({routineID, routineDays,routineCompletion, routineCreat
                         break;
                 }
 
-                return <Grid key={index} item xs={1.714}><Paper variant={"outlined"} square sx={{backgroundColor: colour, width:64, height:64, opacity:opacity, borderColor:borderColour}}></Paper></Grid>;
+                return <Grid key={index} item xs={1.714}><Paper variant={"outlined"} onClick={() => {
+                    const completionData = routineCompletion.filter(element => element.data.routineID === routineID).find(element => {
+                        const split = element.data.date.split("/");
+
+                        return split[0] == (index + 1) - fillerArray.length;
+                    })
+
+                    if(completionData){
+                        console.log(completionData);
+                        setModalData(completionData);
+                    }
+                }
+                } square sx={{backgroundColor: colour, width:64, height:64, opacity:opacity, borderColor:borderColour}}>{dateNumber > 0 ? dateNumber : ""}</Paper></Grid>;
             })}
         </Grid>
     }
 
-    return getBoxes();
+    const getMonthAndYear = () => {
+        const date = new Date();
+
+        return date.toLocaleDateString([], {month:"long"}) + " " + date.getFullYear();
+    }
+
+    return(
+        <>
+            <Typography>{
+                getMonthAndYear()
+            }</Typography>
+            <Box sx={{display:"flex", justifyContent:"space-between"}} >
+                <Typography>Mon</Typography>
+                <Typography>Tue</Typography>
+                <Typography>Wed</Typography>
+                <Typography>Thu</Typography>
+                <Typography>Fri</Typography>
+                <Typography>Sat</Typography>
+                <Typography>Sun</Typography>
+            </Box>
+            {getBoxes()}
+
+            <Modal sx={{mt: 20, overflowY:"scroll"}} open={modalData != null} onClose={() => setModalData(null)} aria-labelledby="modal-modal-title">
+                <div>
+                    <ModalBox>
+                        <Stack>
+                            {modalData &&
+                                <>
+                                    <Typography>RoutineID: {modalData.data.routineID}</Typography>
+                                    <Typography>Date: {modalData.data.date}</Typography>
+                                    <Typography>Completed: {modalData.data.completed ? "Completed" : "Not completed"}</Typography>
+                                    {modalData.data.taskProgress.map(progress => (
+                                        <Paper variant={"outlined"} sx={{mt: 2}} key={progress.id}>
+                                            <Typography>TaskID: {progress.id}</Typography>
+                                            <Typography>Complete: {progress.completed ? "Completed" : "Not completed"}</Typography>
+                                            <Typography>Completed amount: {progress.amount}</Typography>
+                                        </Paper>
+                                    ))}
+                                </>
+                            }
+                        </Stack>
+                    </ModalBox>
+                </div>
+            </Modal>
+        </>
+    )
 }
 
 export default RoutineCalendar;
