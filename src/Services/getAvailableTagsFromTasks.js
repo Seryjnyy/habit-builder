@@ -4,7 +4,7 @@ export const getAvailableTagsFromTasks = (tasks) => {
     if(tasks == undefined)
         return null;
 
-    console.log(tasks);
+    // console.log(tasks);
     tasks.forEach(task => {
         task.data.tags?.forEach(tag => tags.add(tag));
     });

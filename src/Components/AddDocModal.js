@@ -4,12 +4,12 @@ import ModalBox from "./Modal/ModalBox";
 
 import CreateTask from "./CreateTask";
 
-function AddDocModal({onClose, availableTags, open}){
+function AddDocModal({onClose, availableTags, open, setSnackbarMessage}){
     return (
             <Modal open={open} onClose={onClose} aria-labelledby="modal-modal-title">
                 <div>
                     <ModalBox>
-                       <CreateTask availableTags={availableTags} actionAfterSubmission={onClose}/>
+                       <CreateTask availableTags={availableTags} actionAfterSubmission={onClose} setSnackbarMessage={setSnackbarMessage}/>
                     </ModalBox>
                 </div>
             </Modal>

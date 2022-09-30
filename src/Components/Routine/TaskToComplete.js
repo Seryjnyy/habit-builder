@@ -7,7 +7,7 @@ function TaskToComplete({task, activeToday, alreadyCompleted, updateRoutineCompl
     const [updateCallTimeout, setUpdateCallTimeout] = useState();
 
     useEffect(() => {
-        console.log(task.taskInfo.tags);
+        // console.log(task.taskInfo.tags);
     }, []);
 
 

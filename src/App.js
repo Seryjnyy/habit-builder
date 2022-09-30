@@ -27,7 +27,7 @@ function App() {
         }
     })
 
-    console.log(theme.palette)
+    // console.log(theme.palette)
   return (
     <UserAuthContext>
         <BrowserRouter>

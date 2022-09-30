@@ -9,6 +9,7 @@ export const addTask = async (userID, name, description, completionRequirementTy
         description: description,
         completionRequirementType: completionRequirementType,
         created: Timestamp.now(),
-        tags: tags
+        tags: tags,
+        inRoutines: false
     })
 }

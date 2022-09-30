@@ -95,7 +95,6 @@ function CreateRoutineModal(props) {
         if(user.uid === undefined)
             return;
 
-        console.log("hello");
         fetchTasksSnapshot(user.uid, (querySnapshot) => {
             setUserTasks(
                 querySnapshot.docs.map((doc) => ({
@@ -188,9 +187,8 @@ function CreateRoutineModal(props) {
 
     const [taskListComponents, setTaskListComponents] = useState(null);
 
-    const taskList = useMemo(() => {
+    useMemo(() => {
         setTaskListComponents(userTasks.map(task => {
-            console.log("this mapping still happens");
             return <Box sx={{mb: 1, mt: 1}} key={task.id}>
                 <RoutineTask id={task.id} name={task.data.name} tags={task.data?.tags}
                              description={task.data.description}

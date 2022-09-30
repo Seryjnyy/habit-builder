@@ -1,12 +1,26 @@
 import React, {useEffect, useState} from 'react';
-import {Box, Divider, LinearProgress, Paper, ToggleButton, ToggleButtonGroup, Typography} from "@mui/material";
+import {
+    Box,
+    Button,
+    Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
+    Divider,
+    LinearProgress, List, Modal,
+    Paper, Stack, TextField,
+    ToggleButton,
+    ToggleButtonGroup,
+    Typography
+} from "@mui/material";
 import TaskToComplete from "./TaskToComplete";
+import ModalBox from "../Modal/ModalBox";
+import UpdateRoutineModal from "./UpdateRoutineModal";
 
-function Routine({id, name, description, days, activeToday, tasks, routineProgression, updateRoutineCompletion, hidden}) {
+function Routine({id, name, description, days, activeToday, tasks, routineProgression, updateRoutineCompletion, hidden, allTasks}) {
     const [taskProgress, setTaskProgress] = useState((routineProgression?.taskProgress === undefined ? [] : routineProgression.taskProgress));
     const [completed, setCompleted] = useState(false);
 
     const [routineStatus, setRoutineStatus] = useState("")
+
+    const [openUpdateModal, setOpenUpdateModal] = useState(false);
 
     useEffect(() => {
         // console.log("task am    ount " + tasks.length + " finished " + tasksCompletedToday.length)
@@ -19,6 +33,11 @@ function Routine({id, name, description, days, activeToday, tasks, routineProgre
             setRoutineStatus("Not today");
 
     }, [completed]);
+
+    useEffect(() => {
+        console.log(allTasks);
+    }, []);
+
 
     // needs to check if it has been completed already
     useEffect(() => {
@@ -47,7 +66,7 @@ function Routine({id, name, description, days, activeToday, tasks, routineProgre
                 {/*<Typography>Description: {description}</Typography>*/}
                 {activeToday && <Typography variant={"body2"} sx={{fontSize:14}}>Tasks left: {tasks.length - taskProgress.filter(task => (task.completed === true)).length}</Typography>}
                 {tasks.map((task) => {
-                    console.log(task);
+                    // console.log(task);
                     return <TaskToComplete key={id + task.id} task={task} updateRoutineCompletion={updateRoutineCompletionID} activeToday={activeToday}
                                            alreadyCompleted={taskProgress.find(element => element.id === task.id)?.amount === task.requirementAmount  ? true : false} amountComplete={taskProgress.find(element => element.id === task.id)?.amount}></TaskToComplete>
                 })}
@@ -64,7 +83,12 @@ function Routine({id, name, description, days, activeToday, tasks, routineProgre
 
                 <LinearProgress sx={{mt: 2}} variant="determinate" value={taskProgress.filter(task => (task.completed === true)).length != 0 ? (taskProgress.filter(task => (task.completed === true)).length / tasks.length) * 100 : 0} />
                 <Typography>Status: {routineStatus}</Typography>
+                <Button onClick={() => setOpenUpdateModal(true)}>Update</Button>
             </Paper>
+
+            {/*needs to be like this because otherwise the component keeps its last state*/}
+            {openUpdateModal && <UpdateRoutineModal open={openUpdateModal} onClose={() => setOpenUpdateModal(false)} tasks={tasks}
+                                 routineID={id} allTasks={allTasks}></UpdateRoutineModal>}
         </Box>
     );
 }

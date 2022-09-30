@@ -276,6 +276,10 @@ function Routines(){
                                 "name": doc.data().name,
                                 "userID": doc.data().userID,
                                 "tasks": extendedTasks,
+                                "allTasks": taskInfo.docs.map(x => ({
+                                    "id": x.id,
+                                    "data": x.data()
+                                })),
                                 "activeToday": activeToday,
                                 "routineProgression": routineProgression
                             }
@@ -326,6 +330,7 @@ function Routines(){
                              tasks={routine.data.tasks}
                              activeToday={routine.data.activeToday}
                              days={routine.data.days}
+                             allTasks={routine.data.allTasks}
                              routineProgression={routine.data.routineProgression}
                              updateRoutineCompletion={updateRoutineCompletion}>
                     </Routine>
