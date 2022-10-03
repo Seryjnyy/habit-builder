@@ -68,7 +68,7 @@ function Routine({id, name, description, days, activeToday, tasks, routineProgre
                 {tasks.map((task) => {
                     // console.log(task);
                     return <TaskToComplete key={id + task.id} task={task} updateRoutineCompletion={updateRoutineCompletionID} activeToday={activeToday}
-                                           alreadyCompleted={taskProgress.find(element => element.id === task.id)?.amount === task.requirementAmount  ? true : false} amountComplete={taskProgress.find(element => element.id === task.id)?.amount}></TaskToComplete>
+                                           alreadyCompleted={taskProgress.find(element => element.id === task.id)?.amount >= task.requirementAmount  ? true : false} amountComplete={taskProgress.find(element => element.id === task.id)?.amount}></TaskToComplete>
                 })}
                 <Divider></Divider>
                 <ToggleButtonGroup sx={{mt:1}}disabled={true} color={"primary"} value={days}>
@@ -88,7 +88,7 @@ function Routine({id, name, description, days, activeToday, tasks, routineProgre
 
             {/*needs to be like this because otherwise the component keeps its last state*/}
             {openUpdateModal && <UpdateRoutineModal open={openUpdateModal} onClose={() => setOpenUpdateModal(false)} tasks={tasks}
-                                 routineID={id} allTasks={allTasks}></UpdateRoutineModal>}
+                                 routineID={id} allTasks={allTasks} taskProgress={taskProgress}></UpdateRoutineModal>}
         </Box>
     );
 }

@@ -5,15 +5,16 @@ import {doc, setDoc} from "firebase/firestore";
 import {db} from "../../firebase";
 import RoutineTaskUpdate from "./RoutineTaskUpdate";
 
-function UpdateRoutineModal({open, onClose, tasks, allTasks, routineID}){
+function UpdateRoutineModal({open, onClose, tasks, allTasks, routineID, taskProgress}){
     const [taskStates, setTaskStates] = useState([]);
     const [availableTasks, setAvailableTasks] = useState([]);
 
     useEffect(() => {
         const taskStatesTemp = [];
+        console.log(taskProgress);
 
         tasks.forEach(task => {
-            taskStatesTemp.push({id: task.id, requirementType: task.requirementType, requirementAmount: task.requirementAmount, isNew: false, isToBeRemoved: false});
+            taskStatesTemp.push({id: task.id, requirementType: task.requirementType, requirementAmount: task.requirementAmount, isToBeRemoved: false, completed: taskProgress.find(element => element.id === task.id)?.completed});
         });
 
         setTaskStates(taskStatesTemp);
@@ -26,35 +27,14 @@ function UpdateRoutineModal({open, onClose, tasks, allTasks, routineID}){
                     isAlreadyInRoutine = true;
 
             })
+
             if(!isAlreadyInRoutine)
-                availableTasksTemp.push({id: task.id, requirementType: task.data.completionRequirementType, isAdded: false});
+                availableTasksTemp.push({id: task.id, requirementType: task.data.completionRequirementType, requirementAmount: task.data.requirementAmount, isAdded: false});
         });
 
 
         setAvailableTasks(availableTasksTemp);
     }, []);
-
-    const updateTaskState = (taskID, isToBeRemoved, requirementAmount) => {
-        // don't allow to remove the final task
-
-
-            console.log((getLengthOfRemainingTasks() <= 1 + getLengthOfAddedTasks()));
-        console.log(getLengthOfRemainingTasks());
-        console.log(getLengthOfAddedTasks() + 1);
-            // console.log(isToBeRemoved);
-        if((getLengthOfRemainingTasks() + getLengthOfAddedTasks() <= 1) && isToBeRemoved){
-            return;
-        }
-
-        const copyTaskStates = [...taskStates];
-
-        const taskToUpdate = copyTaskStates.find(task => task.id === taskID);
-        console.log(isToBeRemoved);
-        taskToUpdate.isToBeRemoved = isToBeRemoved;
-        taskToUpdate.requirementAmount = requirementAmount;
-
-        setTaskStates([...copyTaskStates]);
-    }
 
     const getLengthOfRemainingTasks = () => {
         return taskStates.filter(task => !task.isToBeRemoved).length;
@@ -64,40 +44,45 @@ function UpdateRoutineModal({open, onClose, tasks, allTasks, routineID}){
         return availableTasks.filter(task => task.isAdded).length;
     }
 
-    const updateAvailableTaskState = (taskID, isAdded, requirementAmount) => {
-        if(!isAdded && (getLengthOfRemainingTasks() + getLengthOfAddedTasks() <= 1))
-            return;
-
+    const updateAmountForAvailableTask = (taskID, amount) => {
+        console.log(taskID);
+        // get a copy of the task we want to update
         const copyAvailableTasks = [...availableTasks];
-
         const taskToUpdate = copyAvailableTasks.find(task => task.id === taskID);
-        taskToUpdate.isAdded = isAdded;
-        taskToUpdate.requirementType = requirementAmount;
 
+        taskToUpdate.requirementAmount = amount;
         setAvailableTasks([...copyAvailableTasks]);
+    }
+
+    const updateAmountForAddedTask = (taskID, amount) => {
+        // get a copy of the task we want to update
+        const copyTaskStates = [...taskStates];
+        const taskToUpdate = copyTaskStates.find(task => task.id === taskID);
+
+        taskToUpdate.requirementAmount = amount;
+        setTaskStates(copyTaskStates);
     }
 
     const updateRoutine = () => {
         const finalTasks = [];
-        const tasksToIncrement = [];
         const tasksToDecrement = [];
+        const tasksToIncrement = [];
 
+        // go through routine tasks
         taskStates.forEach(task => {
             if(task.isToBeRemoved){
                 tasksToDecrement.push(task.id);
             }else{
-                const reqAmount = task.requirementType === "Completion" ? 1 : task.requirementAmount;
-                finalTasks.push({id: task.id, requirementType: task.requirementType, requirementAmount: (reqAmount ? reqAmount : 99)})
-                tasksToIncrement.push(task.id);
+                finalTasks.push({id: task.id, requirementType:task.requirementType, requirementAmount: task.requirementAmount});
             }
         })
 
+        // go through available tasks
+        // only go through tasks that were added to routine
         availableTasks.filter(task => task.isAdded).forEach(task => {
-            const reqAmount = task.requirementType === "Completion" ? 1 : task.requirementAmount;
-            finalTasks.push({id: task.id, requirementType: task.requirementType, requirementAmount: (reqAmount ? reqAmount : 99)});
+            finalTasks.push({id: task.id, requirementType:task.requirementType, requirementAmount: task.requirementAmount});
             tasksToIncrement.push(task.id);
-        });
-
+        })
 
         const ref = doc(db, "routine", routineID);
         console.log(finalTasks);
@@ -106,6 +91,41 @@ function UpdateRoutineModal({open, onClose, tasks, allTasks, routineID}){
             tasks: finalTasks
         }, {merge: true})
         onClose();
+    }
+
+    const updateExistingTask = (taskID, isToBeRemoved, requirementAmount) => {
+
+        // if we are trying to remove a task, make sure the length of tasks in routine is more than 1
+        if(isToBeRemoved && (getLengthOfRemainingTasks() + getLengthOfAddedTasks() <= 1)){
+            return;
+        }
+
+        // get a copy of the task we want to update
+        const copyTaskStates = [...taskStates];
+        const taskToUpdate = copyTaskStates.find(task => task.id === taskID);
+
+        // update to be removed field
+        // if task requirement amount was modified then update the fields
+        taskToUpdate.isToBeRemoved = isToBeRemoved;
+        taskToUpdate.requirementAmount = requirementAmount;
+
+        setTaskStates([...copyTaskStates]);
+    }
+
+    const updateAvailableTask = (taskID, isAdded, requirementAmount) => {
+        // If we are trying to remove a task, make sure the length of tasks in routine is more than 1
+        if(isAdded && (getLengthOfRemainingTasks() + getLengthOfAddedTasks() <= 1))
+            return;
+
+        // get a copy of the task we want to update
+        const copyAvailableTasks = [...availableTasks];
+        const taskToUpdate = copyAvailableTasks.find(task => task.id === taskID);
+
+        // update the task fields
+        taskToUpdate.isAdded = !isAdded;
+        taskToUpdate.requirementAmount = requirementAmount;
+
+        setAvailableTasks([...copyAvailableTasks]);
     }
 
     return (
@@ -117,10 +137,12 @@ function UpdateRoutineModal({open, onClose, tasks, allTasks, routineID}){
                             <Typography id="modal-modal-title" variant="h6" component="h2" sx={{mb: 2}}>
                                 Update routine
                             </Typography>
+                            <Typography>Tasks in routine: {taskStates.filter(task => !task.isToBeRemoved).length + availableTasks.filter(task => task.isAdded).length}</Typography>
                             <Typography>Remove tasks</Typography>
 
                             {taskStates.map(task => {
-                                return <RoutineTaskUpdate id={task.id} requirementAmount={task.requirementAmount} requirementType={task.requirementType} updateTask={updateTaskState} isAdded={!task.isToBeRemoved}/>
+                                console.log(task.completed);
+                                return <RoutineTaskUpdate key={task.id} id={task.id} requirementAmount={task.requirementAmount} requirementType={task.requirementType} updateTask={updateExistingTask} isAdded={!task.isToBeRemoved} updateAmount={updateAmountForAddedTask} disableOptions={task.completed}/>
                             })}
 
                         </Box>
@@ -128,9 +150,7 @@ function UpdateRoutineModal({open, onClose, tasks, allTasks, routineID}){
                         <Box sx={{mt:4}}>
                             <Typography>Add tasks</Typography>
                             {availableTasks.map(task => {
-                                console.log(task);
-
-                                return <RoutineTaskUpdate id={task.id} requirementAmount={task.requirementAmount} requirementType={task.requirementType} updateTask={updateAvailableTaskState} isAdded={task.isAdded}/>
+                                return <RoutineTaskUpdate key={task.id} id={task.id} requirementAmount={task.requirementAmount} requirementType={task.requirementType} updateTask={updateAvailableTask} isAdded={task.isAdded} updateAmount={updateAmountForAvailableTask} disableOptions={false}/>
                             })}
                         </Box>
 
