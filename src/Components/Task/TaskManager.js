@@ -1,11 +1,12 @@
 import React, {useEffect, useState} from "react";
-import {Button, IconButton, Snackbar, Stack, Typography} from "@mui/material";
+import {Button, Chip, IconButton, Snackbar, Stack, Typography} from "@mui/material";
 import "../AddDocModal";
 import AddDocModal from "../AddDocModal";
 import Task from "./Task";
 import {useAuth} from "../Auth/UserAuthContext";
 import {fetchTasksSnapshot} from "../../Services/fetchTasksSnapshot";
 import CloseIcon from "@mui/icons-material/Close";
+import { Box } from "@mui/system";
 
 const MAX_TASK_AMOUNT = 16;
 
@@ -48,6 +49,7 @@ function TaskManager(){
                         });
                     }
                     setTags(Array.from(tagSet));
+                    console.log("this here happens cuh");
 
                     return {
                         id: doc.id,
@@ -66,6 +68,10 @@ function TaskManager(){
             {(tasks.length >= MAX_TASK_AMOUNT) &&  <Typography sx={{fontSize:14, color:"orange"}}>*Sorry, can't create more tasks.</Typography>}
 
             <Stack>
+                <Box>
+                    <Typography>Filter by tags</Typography>
+                    {tags && tags.map((tag, index) => (<Chip key={tag + index} label={tag} sx={{mr: 1}}></Chip>))}
+                </Box>
                 {tasks.map(task => (
                     <Task key={task.id} task={task} availableTags={tags} setSnackbarMessage={setSnackbarMessage}></Task>
                 ))}

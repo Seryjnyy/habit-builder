@@ -23,6 +23,9 @@ function Routines(){
 
     const [showAllRoutines, setShowAllRoutines] = useState(false);
 
+    // tags stuff
+    const [availableTags, setAvailableTags] = useState([])
+
     // snackbar things
     const [snackbarMessage, setSnackbarMessage] = useState("");
     const handleCloseSnackbar = () => {
@@ -221,8 +224,21 @@ function Routines(){
         fetchRoutinesSnapshot(user.uid, (querySnapshot) => {
             let activeTodayAmount = 0;
             let completedRoutinesTodayAmount = 0;
+
+            // Find all the tags used in all routines
+            let tagSet = new Set();
+            querySnapshot.docs.forEach(doc => {
+                doc.data().tags.forEach(tag => {
+                    tagSet.add(tag);
+                })
+                console.log(doc.data().tags)
+            })
+
+            setAvailableTags(Array.from(tagSet));
+
             // this is so scuffed bro fs
             fetchRoutineCompletion(user.uid, getDateDDMMYYYY(new Date())).then((routineProgresses) => {
+
                 fetchTasks(user.uid).then((taskInfo) => {
                     let taskMap = new Map();
                     taskInfo.docs.map((doc) => {
@@ -240,7 +256,6 @@ function Routines(){
                     // loop through routines
                     let gooten = querySnapshot.docs.map((doc) => {
                         let routineProgression;
-
 
                         let extendedTasks = doc.data().tasks.map((t) => {
                             return {...t, "taskInfo": taskMap.get(t.id)};
@@ -281,7 +296,8 @@ function Routines(){
                                     "data": x.data()
                                 })),
                                 "activeToday": activeToday,
-                                "routineProgression": routineProgression
+                                "routineProgression": routineProgression,
+                                "tags": doc.data().tags
                             }
                         };
                     });
@@ -315,7 +331,7 @@ function Routines(){
                     <Typography>Total routines: {routines.length}</Typography>
                     <Typography>Active today: {routinesActiveToday}</Typography>
                     <Typography>Routines left for today: {routinesActiveToday - routinesCompletedToday}</Typography>
-                    <CreateRoutineModal></CreateRoutineModal>
+                    <CreateRoutineModal availableTags={availableTags}></CreateRoutineModal>
                 </Box>
 
 
@@ -332,7 +348,9 @@ function Routines(){
                              days={routine.data.days}
                              allTasks={routine.data.allTasks}
                              routineProgression={routine.data.routineProgression}
-                             updateRoutineCompletion={updateRoutineCompletion}>
+                             updateRoutineCompletion={updateRoutineCompletion}
+                             tags={routine.data.tags}
+                             >
                     </Routine>
                 ))}
                 <Button onClick={() => setShowAllRoutines(!showAllRoutines)}>Show all routines</Button>
@@ -345,7 +363,9 @@ function Routines(){
                              activeToday={routine.data.activeToday}
                              days={routine.data.days}
                              routineProgression={routine.data.routineProgression}
-                             updateRoutineCompletion={updateRoutineCompletion}>
+                             updateRoutineCompletion={updateRoutineCompletion}
+                             tags={routine.data.tags}
+                             >
                     </Routine>
                 ))}
             </Grid>

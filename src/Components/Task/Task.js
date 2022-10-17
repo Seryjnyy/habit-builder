@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
     Box,
     Button,
@@ -15,6 +15,7 @@ import {doc, setDoc, updateDoc} from "firebase/firestore";
 import {db} from "../../firebase";
 import LabelSelect from "./LabelSelect";
 import {deleteTask} from "../../Services/deleteTask";
+import UpdateTaskModal from './UpdateTaskModal';
 
 function Task({task, availableTags, setSnackbarMessage}){
     const [updateModalOpen, setUpdateModalOpen] = useState(false);
@@ -70,6 +71,8 @@ function Task({task, availableTags, setSnackbarMessage}){
                         <Typography>Description: {task.data.description}</Typography>
                         <Typography>in routines: {task.data.inRoutines ? "it is" : "no"}</Typography>
                         <Typography>Completion requirement type: {task.data.completionRequirementType}</Typography>
+                        {console.log(task.data.name) }
+                        {console.log(taskTags)}
                         {taskTags?.map(tag => (
                             <Chip key={tag.value} label={tag.value} sx={{mr: 1}}></Chip>
                         ))}
@@ -103,40 +106,7 @@ function Task({task, availableTags, setSnackbarMessage}){
                                 </Button>
                             </DialogActions>
                         </Dialog>
-                        <Modal
-                            open={updateModalOpen}
-                            onClose={() => setUpdateModalOpen(false)}
-                            aria-labelledby="modal-modal-title"
-                        >
-                            <Box sx={style}>
-                                <Stack>
-                                    <Typography id="modal-modal-title" variant="h6" component="h2" sx={{mb: 2}}>
-                                        Update task
-                                    </Typography>
-
-                                    <TextField
-                                        sx={{mb: 2}}
-                                        id="outlined-helperText"
-                                        label="Description"
-                                        value={taskDescription != undefined ? taskDescription : ""}
-                                        onChange={(e) => {
-                                            setTaskDescription(e.target.value);
-                                        }}
-                                    />
-                                    <Box>
-                                        {/*needs the autocomplete from addDocModal*/}
-                                        {/*now needs to actually update the doc if there are changes*/}
-                                        <LabelSelect value={taskTags != undefined ? taskTags : []}
-                                                     setValue={setTaskTags} availableTags={availableTags.map(tag => ({
-                                            value: tag,
-                                            name: tag,
-                                            createdNow: false
-                                        }))}/>
-                                    </Box>
-                                </Stack>
-                                <Button sx={{mt: 4}} onClick={updateTask}>Update</Button>
-                            </Box>
-                        </Modal>
+                        {updateModalOpen && <UpdateTaskModal open={updateModalOpen} onClose={() => setUpdateModalOpen(false)} description={task.data.description} id={task.id} tags={task.data.tags} availableTags={availableTags}></UpdateTaskModal>}
                     </CardActions>
                 </Card>
             </Box>

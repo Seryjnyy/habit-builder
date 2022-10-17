@@ -8,13 +8,15 @@ import {
     Paper, Stack, TextField,
     ToggleButton,
     ToggleButtonGroup,
+    Chip,
     Typography
 } from "@mui/material";
 import TaskToComplete from "./TaskToComplete";
 import ModalBox from "../Modal/ModalBox";
 import UpdateRoutineModal from "./UpdateRoutineModal";
 
-function Routine({id, name, description, days, activeToday, tasks, routineProgression, updateRoutineCompletion, hidden, allTasks}) {
+
+function Routine({id, name, description, days, activeToday, tasks, routineProgression, updateRoutineCompletion, hidden, allTasks, tags}) {
     const [taskProgress, setTaskProgress] = useState((routineProgression?.taskProgress === undefined ? [] : routineProgression.taskProgress));
     const [completed, setCompleted] = useState(false);
 
@@ -35,7 +37,8 @@ function Routine({id, name, description, days, activeToday, tasks, routineProgre
     }, [completed]);
 
     useEffect(() => {
-        console.log(allTasks);
+        console.log("tags")
+        console.log(tags);
     }, []);
 
 
@@ -59,6 +62,9 @@ function Routine({id, name, description, days, activeToday, tasks, routineProgre
 
                 {/*<Typography>ID: {id}</Typography>*/}
                 <Typography sx={{fontSize: 24}}>{name}</Typography>
+                {tags && tags.map(tag => (
+                            <Chip key={tag} label={tag} sx={{mr: 1}}></Chip>
+                        ))}
                 {/*<span role="img" aria-label={"routine-image"}>*/}
                 {/*    {String.fromCodePoint(0x1F609)}*/}
                 {/*</span>*/}
