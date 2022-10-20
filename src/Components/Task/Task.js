@@ -71,8 +71,8 @@ function Task({task, availableTags, setSnackbarMessage}){
                         <Typography>Description: {task.data.description}</Typography>
                         <Typography>in routines: {task.data.inRoutines ? "it is" : "no"}</Typography>
                         <Typography>Completion requirement type: {task.data.completionRequirementType}</Typography>
-                        {console.log(task.data.name) }
-                        {console.log(taskTags)}
+                        {/* {console.log(task.data.name) }
+                        {console.log(taskTags)} */}
                         {taskTags?.map(tag => (
                             <Chip key={tag.value} label={tag.value} sx={{mr: 1}}></Chip>
                         ))}
