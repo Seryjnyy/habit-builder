@@ -12,7 +12,7 @@ import {
 import {fetchRoutinesSnapshot} from "../../Services/fetchRoutinesSnapshot";
 import {ExpandMore} from "@mui/icons-material";
 import RoutineCalendar from "./RoutineCalendar";
-import RoutineSpecificAccordion from "./RoutineSpecificAccordion";
+// import RoutineSpecificAccordion from "./RoutineSpecificAccordion";
 import RoutinesInDay from "./RoutinesInDay";
 import {fetchRoutineCompletionSpecificMonthSnapshot} from "../../Services/fetchRoutineCompletionSpecificMonthSnapshot";
 

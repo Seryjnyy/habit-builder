@@ -11,6 +11,9 @@ import RoutinePage from "./Pages/RoutinePage";
 import ProfilePage from "./Pages/ProfilePage";
 import {green} from "@mui/material/colors";
 import {useThemeMode} from "./Components/ThemeModeContext";
+import {AllData} from "./AllData"
+
+
 
 function App() {
     let {mode} = useThemeMode();
@@ -36,6 +39,7 @@ function App() {
                     <Box sx={{overflowX:"hidden"}}>
                         <Navbar></Navbar>
                         <Box sx={{mt:10}}>
+                            <AllData>
                             <Routes>
                                 <Route path={"/"} element={<LandingPage></LandingPage>}></Route>
                                 <Route path={"/login"} element={<Login></Login>}></Route>
@@ -45,6 +49,7 @@ function App() {
                                 <Route path={"/profile"} element={<RequireAuth redirectTo={"/login"}><ProfilePage></ProfilePage></RequireAuth>}></Route>
 
                             </Routes>
+                            </AllData>
                         </Box>
                     </Box>
                 </ThemeProvider>

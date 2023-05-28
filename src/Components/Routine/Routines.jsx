@@ -11,18 +11,16 @@ import {fetchRoutineStreak} from "../../Services/fetchRoutineStreak";
 import {setRoutineStreak} from "../../Services/setRoutineStreak";
 import {fetchTasks} from "../../Services/fetchTasks";
 import {fetchRoutinesSnapshot} from "../../Services/fetchRoutinesSnapshot";
+import {updateRoutineStreak} from "../newStuff/updateRoutineStreak"
+import {getDateDDMMYYYY} from "../newStuff/dateUtility"
+import {orderRoutines} from "../newStuff/orderRoutines"
 
 function Routines(){
     const {user} = useAuth();
-
     const [routines, setRoutines] = useState([]);
-
     const [routinesActiveToday, setRoutinesActiveToday] = useState(0);
-
     const [routinesCompletedToday, setRoutinesCompletedToday] = useState(0);
-
     const [showAllRoutines, setShowAllRoutines] = useState(false);
-
     // tags stuff
     const [availableTags, setAvailableTags] = useState([])
 
@@ -94,128 +92,6 @@ function Routines(){
         }).catch(err => alert(err));
     };
 
-    const augh = (routineID, dateTodayLong) => {
-        // get the next day for the task
-        const routineFound = routines.find(element => element.id === routineID);
-
-        const todayAsDayOfWeek = dateTodayLong.getDay() === 0 ? 7 : dateTodayLong.getDay();
-
-        let nextDayOfTheWeek = -1;
-        let routineDays = [...routineFound.data.days].sort();
-
-
-        for(let i = 0; i < routineDays.length; i++){
-            // console.log(routineDays[i])
-            if(todayAsDayOfWeek === routineDays[i]){
-                if(i === routineDays.length - 1){
-                    nextDayOfTheWeek = routineDays[0];
-                    break;
-                }
-
-                nextDayOfTheWeek = routineDays[i + 1];
-                break;
-            }
-        }
-
-        let daysTillNextDay = nextDayOfTheWeek - todayAsDayOfWeek;
-
-        // the same day next week
-        if(daysTillNextDay === 0){
-            daysTillNextDay = 7;
-        }else if(daysTillNextDay < 0){
-            // wrap around
-            daysTillNextDay = daysTillNextDay + 7;
-        }
-
-        const dateOfNextDay = dateTodayLong.getDate() + daysTillNextDay;
-
-        const totalDaysForThisMonth = new Date(dateTodayLong.getFullYear(), dateTodayLong.getMonth(), 0).getDate();
-
-        let dayOfNextDay = dateOfNextDay;
-
-        if(dayOfNextDay > totalDaysForThisMonth){
-            dayOfNextDay = Math.abs(totalDaysForThisMonth - dateOfNextDay);
-        }
-
-        let someDate = new Date();
-        let result = someDate.setDate(someDate.getDate() + daysTillNextDay);
-        return new Date(result);
-    };
-
-    const updateRoutineStreak = (routineID) => {
-        let newDate = augh(routineID, new Date());
-
-        fetchRoutineStreak(routineID).then((streakDoc) => {
-            let streak = 1;
-
-            let longestStreak = 0;
-            let longestStreakStartDate = "";
-            let longestStreakEndDate = "";
-            let streakStartDate = "";
-
-            if(streakDoc.data() != undefined){
-                let streakDocData = streakDoc.data();
-
-                streakStartDate = streakDocData.streakStartDate;
-                longestStreak = streakDocData.longestStreak;
-                longestStreakStartDate = streakDocData.longestStreakStartDate;
-                longestStreakEndDate = streakDocData.longestStreakEndDate;
-
-
-                let nextSplit = streakDocData.nextDate.split("/");
-                let todaySplit = getDateDDMMYYYY(new Date()).split("/");
-
-                streak = streakDocData.streak;
-
-
-                if((nextSplit[0] === todaySplit[0]) && (nextSplit[1] === todaySplit[1]) && (nextSplit[2] === todaySplit[2])){
-                    // good shit you carry on the streak
-                    streak = streak + 1;
-                    // console.log("they the same")
-                }else{
-                    // check if before or after
-                    let properNextDate = new Date(nextSplit[2], nextSplit[1] - 1, nextSplit[0]);
-                    let properTodayDate = new Date(todaySplit[2], todaySplit[1] - 1, todaySplit[0]);
-
-                    if(properTodayDate > properNextDate){
-                        // shit you missed it bro
-                        if(streak > longestStreak){
-                            longestStreak = streak;
-                            longestStreakStartDate = streakStartDate;
-                            longestStreakEndDate = getDateDDMMYYYY(new Date());
-                        }
-
-                        streak = 1;
-                        // console.log("today is ahead of next day")
-                    }else{
-                        // this here should not happen
-                        // console.log("today is before next day")
-                    }
-                }
-            }
-
-
-            // if streak 1
-            // set streakStartDate
-            // if flopped
-            // then check if the streak against longestStreak
-            // if longer than longestStreak
-            // then save streak, longestStreakEndDate,
-            // setRoutineStreak(routineID, {
-            //     routineID: routineID,
-            //     streak: streak,
-            //     nextDate: newDate.getDate() + "/" + (newDate.getMonth() + 1) + "/" + newDate.getFullYear(),
-            //     streakStartDate: streak === 1 ? getDateDDMMYYYY(new Date()) : streakStartDate,
-            //     longestStreak: longestStreak,
-            //     longestStreakStartDate: longestStreakStartDate,
-            //     longestStreakEndDate: longestStreakEndDate
-            // });
-        }).catch(e => alert(e.message()));
-    };
-
-    const getDateDDMMYYYY = (date) => {
-        return date.getDate() + "/" + (date.getMonth() + 1) + "/" + date.getFullYear();
-    };
 
     useEffect(() => {
         if(user.uid === undefined)
@@ -310,19 +186,6 @@ function Routines(){
         });
     }, [user]);
 
-
-    const orderRoutines = (array) => {
-        const active = array.filter(element => element.data.activeToday);
-        const notActive = array.filter(element => !element.data.activeToday);
-
-        const completed = active.filter(element => element.data?.routineProgression?.completed === true);
-        const notCompleteAndNotStarted = active.filter(element => (element.data?.routineProgression === undefined || element.data?.routineProgression?.completed === false));
-
-        const started = notCompleteAndNotStarted.filter(element => element.data?.routineProgression != undefined);
-        const notStarted = notCompleteAndNotStarted.filter(element => element.data?.routineProgression === undefined);
-
-        return [...started, ...notStarted, ...completed, ...notActive];
-    };
 
     return (
         <>

@@ -16,15 +16,53 @@ import { fetchTasksSnapshot } from "../../Services/fetchTasksSnapshot";
 import CloseIcon from "@mui/icons-material/Close";
 import { Box } from "@mui/system";
 import TagFilter from "./TagFilter";
+import { useAllData } from "../../AllData";
 
 const MAX_TASK_AMOUNT = 16;
 
 function TaskManager() {
+  const { user } = useAuth();
+  const {tasksData, requestTasksData} = useAllData();
+
   const [openAddModal, setOpenAddModal] = useState(false);
   const [tasks, setTasks] = useState([]);
-  const [tags, setTags] = useState([]);
+  const [tasksRender, setTasksRender] = useState([]);
 
-  const { user } = useAuth();
+  useEffect(() => {
+    if(tasksData != null){
+      let tempTasks = tasksData.map(task => ({...task, filterMatch: 0}));
+      setTasks(tempTasks);
+      setTasksRender(tempTasks);
+    }
+  
+
+  }, [tasksData]);
+
+    // filter stuff
+    const [availableTags, setAvailableTags] = useState([]);
+
+
+  useEffect(() => {
+    const tagSet = new Set();
+
+    tasks.forEach(task => {
+      task.tags.forEach(tag => {
+        tagSet.add(tag);
+      });
+    });
+
+    // If tag is already in available tags, then don't change 
+
+    setAvailableTags(Array.from(tagSet).map(tag => {
+      let found = availableTags.find(element => tag === element.name)?.selected;
+      let selected = found == undefined ? false : found;
+
+
+      return {name:tag, selected:selected}
+    }));
+  }, [tasks])
+  
+
 
   // snackbar things
   const [snackbarMessage, setSnackbarMessage] = useState("");
@@ -40,43 +78,18 @@ function TaskManager() {
     </>
   );
 
-  // filter stuff
-  const [availableTags, setAvailableTags] = useState([]);
+
 
   useEffect(() => {
     if (user.uid === undefined) return;
 
-    const tagSet = new Set();
-
-    fetchTasksSnapshot(user.uid, (querySnapshot) => {
-      setTasks(
-        querySnapshot.docs.map((doc) => {
-          if (doc.data()?.tags) {
-            doc.data().tags.forEach((tag) => {
-              tagSet.add(tag);
-            });
-          }
-          setTags(Array.from(tagSet));
-
-          // for tag filter
-          const availableTagsArray = [];
-          tagSet.forEach((tag) =>
-            availableTagsArray.push({ name: tag, selected: false })
-          );
-          setAvailableTags(availableTagsArray);
-
-          return {
-            id: doc.id,
-            data: { ...doc.data(), filterMatch: 0 },
-          };
-        })
-      );
-    });
+    requestTasksData(user.uid);
   }, [user]);
 
   useEffect(() => {
     // check which tags are set
     // increment filterMatch for each task for each tag
+    // TODO : WTF THIS IS RETARDED
     const tasksTemp = JSON.parse(JSON.stringify(tasks));
 
     tasksTemp?.forEach(task => {
@@ -89,12 +102,11 @@ function TaskManager() {
             tagsMatched++;
         })
       })
-      task.data.filterMatch = tagsMatched;
+      task.filterMatch = tagsMatched;
     })
 
-    setTasks([...tasksTemp]);
-    console.log(availableTags.length);
-    console.log(tasksTemp);
+
+    setTasksRender([...tasksTemp]);
   }, [availableTags]);
 
   // idk if this needs to happen each re-render
@@ -106,11 +118,11 @@ function TaskManager() {
     let previousMatchedFilter = true;
     let noMatches = false;
     sorted.forEach((task, index) => {
-      if(index === 0 && task.data.filterMatch < appliedTagsAmount){
+      if(index === 0 && task.filterMatch < appliedTagsAmount){
         arr.push(<Typography>Nothing found with these exact tags</Typography>);
         arr.push(<Divider sx={{mt:1, mb:1}}/>)
         noMatches = true;
-      }else if(previousMatchedFilter && task.data.filterMatch < appliedTagsAmount && !noMatches){
+      }else if(previousMatchedFilter && task.filterMatch < appliedTagsAmount && !noMatches){
         arr.push(<Divider sx={{mt:1, mb:1}}/>)
         previousMatchedFilter = false;
       }
@@ -118,7 +130,7 @@ function TaskManager() {
       arr.push(<Task
         key={task.id}
         task={task}
-        availableTags={tags}
+        availableTags={availableTags.map(tag => (tag.name))}
         setSnackbarMessage={setSnackbarMessage}
       ></Task>);
     });
@@ -148,7 +160,7 @@ function TaskManager() {
           ></TagFilter>
         </Box>
         {
-          doSomething(tasks.sort((a, b) => b.data.filterMatch - a.data.filterMatch))
+          doSomething(tasksRender.sort((a, b) => b.filterMatch - a.filterMatch))
         }
       </Stack>
 
@@ -156,7 +168,7 @@ function TaskManager() {
         onClose={() => {
           setOpenAddModal(false);
         }}
-        availableTags={tags}
+        availableTags={availableTags.map(tag => (tag.name))}
         open={openAddModal}
         setSnackbarMessage={setSnackbarMessage}
       ></AddDocModal>
